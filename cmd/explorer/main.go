@@ -55,7 +55,7 @@ func main() {
 	orbit.Ground = world.GroundHeight
 	view := models.Camera{Far: 20000}
 
-	frames, elapsed := 0, 0.0
+	var second secondFigures
 	var statistics runtime.MemStats
 	app.Run(func(frame app.Frame) bool {
 		circleX, circleY := frame.Reading.Circle()
@@ -65,18 +65,64 @@ func main() {
 
 		separation := ctr.Slider3D() * float32(orbit.Distance) * separationAtFullSlider
 		renderer.DrawStereo(world, view, separation, float32(orbit.Distance))
+		second.add(frame.Seconds, float32(renderer.PlanTime().Microseconds())/1000, ctr.ProcessingTime(), ctr.DrawingTime())
 
-		frames++
-		elapsed += frame.Seconds
-		if elapsed >= 1 {
+		if second.elapsed >= 1 {
 			runtime.ReadMemStats(&statistics)
-			print("\x1b[9;0H")
-			println("frames a second:", frames, "   ")
-			println("GPU (ms):       ", int(ctr.DrawingTime()*10)/10, ".", int(ctr.DrawingTime()*10)%10, "   ")
-			println("3D:             ", int(ctr.Slider3D()*100), "%   ")
+			drawn := renderer.Statistics(0)
+			print("\x1b[8;0H")
+			println("frames a second:", second.frames, "   ")
+			println("            mean   most")
+			printMilliseconds("plan (ms):   ", second.plan/float32(second.frames), second.mostPlan)
+			printMilliseconds("CPU (ms):    ", second.processing/float32(second.frames), second.mostProcessing)
+			printMilliseconds("GPU (ms):    ", second.drawing/float32(second.frames), second.mostDrawing)
+			println("triangles:      ", drawn.Triangles, "     ")
+			println("baked meshes:   ", renderer.Bakes(), "   ")
 			println("collections:    ", statistics.NumGC, "   ")
-			frames, elapsed = 0, 0
+			println("3D:             ", int(ctr.Slider3D()*100), "%   ")
+			second = secondFigures{}
 		}
 		return true
 	})
+}
+
+// secondFigures gathers a second's frames: how many, and the mean and the worst of each time.
+type secondFigures struct {
+	frames                                int
+	elapsed                               float64
+	plan, processing, drawing             float32
+	mostPlan, mostProcessing, mostDrawing float32
+}
+
+func (figures *secondFigures) add(seconds float64, plan, processing, drawing float32) {
+	figures.frames++
+	figures.elapsed += seconds
+	figures.plan += plan
+	figures.processing += processing
+	figures.drawing += drawing
+	figures.mostPlan = max(figures.mostPlan, plan)
+	figures.mostProcessing = max(figures.mostProcessing, processing)
+	figures.mostDrawing = max(figures.mostDrawing, drawing)
+}
+
+// printMilliseconds prints two times with one decimal: the console's println has no float format.
+func printMilliseconds(label string, mean, most float32) {
+	println(label, tenths(mean), " ", tenths(most), "   ")
+}
+
+func tenths(milliseconds float32) string {
+	whole := int(milliseconds*10 + 0.5)
+	return itoa(whole/10) + "." + itoa(whole%10)
+}
+
+func itoa(value int) string {
+	if value == 0 {
+		return "0"
+	}
+	digits := []byte{}
+	for value > 0 {
+		digits = append([]byte{byte('0' + value%10)}, digits...)
+		value /= 10
+	}
+	return string(digits)
 }

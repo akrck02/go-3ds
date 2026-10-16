@@ -13,12 +13,15 @@
 ## The explorer
 
 <p align="center">
-  <img alt="The village seen from close by in the morning; below, the View tab with buttons to fly to the island, the village or the peak, and a distance slider" src="images/explorer-view.png" width="300">
+  <img alt="The island from afar; below, the View tab: a map of the island coloured by height, with dots on the village and the peak, beside buttons to fly there" src="images/explorer-map.png" width="300">
   <img alt="The same view at nine in the evening, dark, with the lamp lit; below, the Light tab with the time of day at 21:00, a moon icon and the fog on" src="images/explorer-evening.png" width="300">
   <img alt="The Figures tab: chips with 56 frames a second, 0.4 ms of GPU, 31 732 triangles and 0 % 3D" src="images/explorer-figures.png" width="300">
 </p>
 
-Flying to a place eases the camera there in under a second. The time of day changes the light
+The map is a picture the explorer draws when it starts, from the island's heights
+(`world.GroundHeight`): coloured by height like a chart, shaded as if lit from the north-west,
+with a dot on the village and one on the peak. Flying to a place eases the camera there in under
+a second. The time of day changes the light
 when the finger leaves the screen: a new light works the meshes' colours out again on the
 processor, which would make every step of a drag stutter.
 

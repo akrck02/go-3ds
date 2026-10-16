@@ -24,23 +24,24 @@ func (explorer *explorer) build(context *ui.Context) {
 	})
 }
 
-// buildView offers the places to fly to and the distance.
+// buildView shows the island's map beside the places to fly to, and the distance.
 func (explorer *explorer) buildView(context *ui.Context) {
-	context.Caption("Fly to")
 	context.Row(func() {
-		for _, destination := range places {
-			if context.IconButton(destination.icon, destination.name) {
-				explorer.flight.start(explorer.orbit, destination)
+		context.Image(explorer.islandMap, ui.Layout{Width: ui.Fixed(mapSize), Height: ui.Fixed(mapSize)}, context.Theme.ControlRadius)
+		context.Column(func() {
+			context.Caption("Fly to")
+			for _, destination := range places {
+				if context.IconButton(destination.icon, destination.name) {
+					explorer.flight.start(explorer.orbit, destination)
+				}
 			}
-		}
+		})
 	})
 	distance := float32(explorer.orbit.Distance)
-	context.Caption("Distance")
 	if context.Slider("distance", &distance, float32(explorer.orbit.MinimumDistance), float32(explorer.orbit.MaximumDistance)) {
 		explorer.flight.active = false
 		explorer.orbit.Distance = float64(distance)
 	}
-	context.Caption("Circle pad: turn  ·  L / R: away, closer")
 }
 
 // buildLight offers the time of day and the fog.

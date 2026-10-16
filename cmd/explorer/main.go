@@ -15,6 +15,7 @@ import (
 	"github.com/akrck02/go-3ds/bottom"
 	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/ctr"
+	"github.com/akrck02/go-renderer/draw2d"
 	"github.com/akrck02/go-renderer/graphics"
 	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-renderer/models"
@@ -71,14 +72,15 @@ func main() {
 
 // explorer is the program's state: the island, the camera and what the panel shows.
 type explorer struct {
-	world   *scene.Scene
-	orbit   *camera.Orbit
-	flight  flight
-	tab     int
-	hour    float32 // on the slider
-	litHour float32 // the hour the island is lit for
-	fog     bool
-	figures figures
+	world     *scene.Scene
+	islandMap *draw2d.Image
+	orbit     *camera.Orbit
+	flight    flight
+	tab       int
+	hour      float32 // on the slider
+	litHour   float32 // the hour the island is lit for
+	fog       bool
+	figures   figures
 }
 
 func newExplorer(world *scene.Scene) *explorer {
@@ -86,7 +88,7 @@ func newExplorer(world *scene.Scene) *explorer {
 	orbit.Pitch = 0.5
 	orbit.MaximumDistance = 850 // the fog is total at 900
 	orbit.Ground = world.GroundHeight
-	explorer := &explorer{world: world, orbit: orbit, hour: 10, fog: true}
+	explorer := &explorer{world: world, islandMap: islandMap(world), orbit: orbit, hour: 10, fog: true}
 	explorer.light(explorer.hour)
 	return explorer
 }

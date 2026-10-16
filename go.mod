@@ -2,4 +2,17 @@ module github.com/akrck02/go-3ds
 
 go 1.25.6
 
-require github.com/akrck02/go-renderer v0.0.0-20261016213457-ca0c15a652f2
+require (
+	github.com/akrck02/go-renderer v0.0.0
+	github.com/akrck02/go-ui v0.0.0-20261015201303-b9d6974e13e3
+)
+
+require (
+	golang.org/x/image v0.45.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
+)
+
+// go-ui asks for go-renderer v0.0.0 (it builds against a local copy); this is go-renderer's
+// feature/3ds, which has ctr.
+replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261016215412-7190498a6140

@@ -35,8 +35,8 @@ type Frame struct {
 func Run(step func(frame Frame) bool) {
 	C.fastCPU()
 	state := input.NewState()
-	state.FramebufferWidth, state.FramebufferHeight = ctr.ScreenWidth, ctr.ScreenHeight
-	state.WindowWidth, state.WindowHeight = 320, 240 // the touch screen, where the pointer is
+	state.FramebufferWidth, state.FramebufferHeight = ctr.BottomWidth, ctr.BottomHeight
+	state.WindowWidth, state.WindowHeight = ctr.BottomWidth, ctr.BottomHeight // the touch screen, where the pointer is
 	var reader controls.Controls
 	last := time.Now()
 	for ctr.Running() {

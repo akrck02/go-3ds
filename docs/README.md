@@ -5,9 +5,25 @@
 | Piece | What it does |
 |---|---|
 | `controls` | The buttons, the circle pad and the touch screen as go-renderer's `input.State`: the cross is the arrow keys, L and R are minus and plus, A is Enter, B is Escape and the system's back, and the touch screen is the pointer, so dragging works like dragging with a mouse. Turning a reading into input is plain Go, tested on any computer; reading the hardware (`read.go`) is built only for the 3DS. |
+| `bottom` | A go-ui interface on the bottom screen: go-ui lays it out, go-renderer's `ctr.FlatRenderer` paints it, the touch screen is its pointer. `bottom.Theme` is go-ui's dark theme made for 320 × 240 pixels a finger touches, in the sea's colours. |
 | `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame, START or the HOME menu to stop. |
-| `cmd/explorer` | The sample island: the circle pad or the cross turn the camera round it, L and R move it away and closer, dragging on the bottom screen turns it, and the 3D slider shows it in 3D. |
+| `cmd/explorer` | The sample island on the top screen, in 3D with the slider, and a go-ui panel on the bottom one: places to fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn the camera, L and R move it away and closer. |
 | `tools/run-in-azahar.sh` | Runs a `.3dsx` in the Azahar emulator without a screen (under Xvfb) and prints what the program wrote to the debug log; it also warns about reads and writes of unmapped memory, which stop a program on the console but not in the emulator. |
+
+## The explorer
+
+<p align="center">
+  <img alt="The village seen from close by in the morning; below, the View tab with buttons to fly to the island, the village or the peak, and a distance slider" src="images/explorer-view.png" width="300">
+  <img alt="The same view at nine in the evening, dark, with the lamp lit; below, the Light tab with the time of day at 21:00, a moon icon and the fog on" src="images/explorer-evening.png" width="300">
+  <img alt="The Figures tab: chips with 56 frames a second, 0.4 ms of GPU, 31 732 triangles and 0 % 3D" src="images/explorer-figures.png" width="300">
+</p>
+
+Flying to a place eases the camera there in under a second. The time of day changes the light
+when the finger leaves the screen: a new light works the meshes' colours out again on the
+processor, which would make every step of a drag stutter.
+
+Both screens are drawn in one frame: the island with `ctr.SceneRenderer.PaintStereo`, the panel
+with `bottom.Interface.Paint`, between `ctr.BeginFrame` and `ctr.EndFrame`.
 
 ## What you need
 
@@ -23,9 +39,9 @@ Copy the `.3dsx` to `/3ds/` on the SD card and open it from the Homebrew Launche
 
 ## What was checked
 
-On a New 3DS XL: go-renderer's sample island at 60 frames a second (GPU about 5 ms a frame) with
-`cmd/island3ds`, whose drawing `cmd/explorer` shares. The explorer itself, its controls and 3D are
-checked in the emulator (the cross turns the camera); the 3D needs a look on the console.
+On a New 3DS XL: the explorer at 60 frames a second, steady while the camera moves fast (GPU about
+6 ms a frame, processor under 1 ms), in 3D with the slider. Its go-ui panel is checked in the
+Azahar emulator: tabs, buttons, the slider and the switch answer clicks on the bottom screen.
 
 ## Not yet
 

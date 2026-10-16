@@ -1,20 +1,24 @@
 //go:build nintendo3ds
 
-// The sample island to explore on the Nintendo 3DS: the circle pad or the cross turn the camera
-// round it, L and R move it away and closer, dragging on the bottom screen turns it as a mouse
-// would, and the 3D slider shows it in 3D.
+// The sample island to explore on the Nintendo 3DS. The top screen shows the island, in 3D with
+// the slider; the bottom screen is a go-ui panel, touched with a finger or the stylus: places to
+// fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn
+// the camera, L and R move it away and closer.
 //
 //	tinygo build -target=nintendo3ds -o explorer.3dsx ./cmd/explorer
 package main
 
 import (
-	"runtime"
+	"math"
 
 	"github.com/akrck02/go-3ds/app"
+	"github.com/akrck02/go-3ds/bottom"
 	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/graphics"
+	"github.com/akrck02/go-renderer/input"
 	"github.com/akrck02/go-renderer/models"
+	"github.com/akrck02/go-renderer/scene"
 	"github.com/akrck02/go-renderer/scene/sample"
 )
 
@@ -28,6 +32,9 @@ const (
 // at its top.
 const separationAtFullSlider = 0.03
 
+// The island's fog, when it is on.
+const fogNear, fogFar = 250, 900
+
 func main() {
 	screen, err := ctr.Open()
 	if err != nil {
@@ -35,94 +42,96 @@ func main() {
 		return
 	}
 	defer screen.Close()
-	ctr.OpenBottomConsole()
-	println("explorer: the sample island")
-	println("circle pad or cross: turn")
-	println("L / R: away / closer")
-	println("drag on this screen: turn")
-	println("3D slider: depth")
-	println("START: exit")
-
-	world := sample.Island()
+	panel, err := bottom.New(bottom.Theme())
+	if err != nil {
+		println(err.Error())
+		return
+	}
 	renderer, err := ctr.NewSceneRenderer(screen)
 	if err != nil {
 		println(err.Error())
 		return
 	}
-	orbit := camera.NewOrbit(graphics.Vec4{0, 0, 0, 1}, 450)
-	orbit.Pitch = 0.5
-	orbit.MaximumDistance = 850 // the island's fog is total at 900
-	orbit.Ground = world.GroundHeight
+
+	explorer := newExplorer(sample.Island())
 	view := models.Camera{Far: 20000}
-
-	var second secondFigures
-	var statistics runtime.MemStats
 	app.Run(func(frame app.Frame) bool {
-		circleX, circleY := frame.Reading.Circle()
-		orbit.Yaw -= circleX * circleYawSpeed * frame.Seconds
-		orbit.Pitch += circleY * circlePitchSpeed * frame.Seconds
-		orbit.Update(frame.Input, frame.Seconds, &view)
+		explorer.steer(frame, &view)
+		explorer.figures.add(frame.Seconds, ctr.DrawingTime(), renderer.Statistics(0).Triangles)
 
-		separation := ctr.Slider3D() * float32(orbit.Distance) * separationAtFullSlider
-		renderer.DrawStereo(world, view, separation, float32(orbit.Distance))
-		second.add(frame.Seconds, float32(renderer.PlanTime().Microseconds())/1000, ctr.ProcessingTime(), ctr.DrawingTime())
-
-		if second.elapsed >= 1 {
-			runtime.ReadMemStats(&statistics)
-			drawn := renderer.Statistics(0)
-			print("\x1b[8;0H")
-			println("frames a second:", second.frames, "   ")
-			println("            mean   most")
-			printMilliseconds("plan (ms):   ", second.plan/float32(second.frames), second.mostPlan)
-			printMilliseconds("CPU (ms):    ", second.processing/float32(second.frames), second.mostProcessing)
-			printMilliseconds("GPU (ms):    ", second.drawing/float32(second.frames), second.mostDrawing)
-			println("triangles:      ", drawn.Triangles, "     ")
-			println("baked meshes:   ", renderer.Bakes(), "   ")
-			println("collections:    ", statistics.NumGC, "   ")
-			println("3D:             ", int(ctr.Slider3D()*100), "%   ")
-			second = secondFigures{}
-		}
+		ctr.BeginFrame()
+		separation := ctr.Slider3D() * float32(explorer.orbit.Distance) * separationAtFullSlider
+		renderer.PaintStereo(explorer.world, view, separation, float32(explorer.orbit.Distance))
+		panel.Paint(frame.Input, explorer.build)
+		ctr.EndFrame()
+		explorer.applyLight(frame.Input)
 		return true
 	})
 }
 
-// secondFigures gathers a second's frames: how many, and the mean and the worst of each time.
-type secondFigures struct {
-	frames                                int
-	elapsed                               float64
-	plan, processing, drawing             float32
-	mostPlan, mostProcessing, mostDrawing float32
+// explorer is the program's state: the island, the camera and what the panel shows.
+type explorer struct {
+	world   *scene.Scene
+	orbit   *camera.Orbit
+	flight  flight
+	tab     int
+	hour    float32 // on the slider
+	litHour float32 // the hour the island is lit for
+	fog     bool
+	figures figures
 }
 
-func (figures *secondFigures) add(seconds float64, plan, processing, drawing float32) {
-	figures.frames++
-	figures.elapsed += seconds
-	figures.plan += plan
-	figures.processing += processing
-	figures.drawing += drawing
-	figures.mostPlan = max(figures.mostPlan, plan)
-	figures.mostProcessing = max(figures.mostProcessing, processing)
-	figures.mostDrawing = max(figures.mostDrawing, drawing)
+func newExplorer(world *scene.Scene) *explorer {
+	orbit := camera.NewOrbit(graphics.Vec4{0, 0, 0, 1}, 450)
+	orbit.Pitch = 0.5
+	orbit.MaximumDistance = 850 // the fog is total at 900
+	orbit.Ground = world.GroundHeight
+	explorer := &explorer{world: world, orbit: orbit, hour: 10, fog: true}
+	explorer.light(explorer.hour)
+	return explorer
 }
 
-// printMilliseconds prints two times with one decimal: the console's println has no float format.
-func printMilliseconds(label string, mean, most float32) {
-	println(label, tenths(mean), " ", tenths(most), "   ")
-}
-
-func tenths(milliseconds float32) string {
-	whole := int(milliseconds*10 + 0.5)
-	return itoa(whole/10) + "." + itoa(whole%10)
-}
-
-func itoa(value int) string {
-	if value == 0 {
-		return "0"
+// steer turns and zooms the camera with the circle pad, the cross and L, R, or flies it to a
+// place chosen on the panel, and places the view.
+func (explorer *explorer) steer(frame app.Frame, view *models.Camera) {
+	if explorer.flight.active {
+		explorer.flight.step(explorer.orbit, frame.Seconds)
+		explorer.orbit.Update(nil, frame.Seconds, view)
+		return
 	}
-	digits := []byte{}
-	for value > 0 {
-		digits = append([]byte{byte('0' + value%10)}, digits...)
-		value /= 10
+	circleX, circleY := frame.Reading.Circle()
+	explorer.orbit.Yaw -= circleX * circleYawSpeed * frame.Seconds
+	explorer.orbit.Pitch += circleY * circlePitchSpeed * frame.Seconds
+	// The keys only: the touch screen is the panel's, so it does not turn the camera too.
+	keys := *frame.Input
+	keys.SetButton(input.MouseLeft, false)
+	keys.ScrollDelta = 0
+	explorer.orbit.Update(&keys, frame.Seconds, view)
+}
+
+// light sets the sun for an hour of the day: it rises in the east at six, is highest at noon and
+// sets in the west at six in the evening.
+func (explorer *explorer) light(hour float32) {
+	dayAngle := float64(hour-6) / 12 * math.Pi
+	elevation := math.Sin(dayAngle) * 1.1
+	sun := graphics.Vec4{float32(-math.Cos(dayAngle) * math.Cos(elevation)), float32(math.Sin(elevation)), float32(-0.35 * math.Cos(elevation)), 0}
+	explorer.world.Environment.SunDirection = sun.Normalize()
+	explorer.litHour = hour
+}
+
+// applyLight lights the island for the slider's hour once the finger leaves the screen: a new
+// light works the meshes' colours out again, which would make every step of a drag stutter.
+func (explorer *explorer) applyLight(state *input.State) {
+	if explorer.hour != explorer.litHour && !state.Button(input.MouseLeft) {
+		explorer.light(explorer.hour)
 	}
-	return string(digits)
+}
+
+// setFog turns the island's fog on or off.
+func (explorer *explorer) setFog(on bool) {
+	explorer.fog = on
+	explorer.world.Environment.FogNear, explorer.world.Environment.FogFar = fogNear, fogFar
+	if !on {
+		explorer.world.Environment.FogFar = 0
+	}
 }

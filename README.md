@@ -4,8 +4,13 @@
 
 Go programs on the **Nintendo 3DS**, as homebrew for the Homebrew Launcher. The drawing is
 [go-renderer](https://github.com/akrck02/go-renderer)'s (`ctr`, through citro3d); this repository
-holds the rest of the platform: the controls as go-renderer's `input.State`, the program loop, and
-an explorer of the sample island.
+holds the rest of the platform: the controls as go-renderer's `input.State`, the program loop, a
+[go-ui](https://github.com/akrck02/go-ui) interface on the bottom screen, and an explorer of the
+sample island.
+
+<p align="center">
+  <img alt="The 3DS's two screens in the emulator: the sample island's village above, a go-ui panel with the time of day below" src="docs/images/explorer-evening.png" width="320">
+</p>
 
 ```bash
 tinygo build -target=nintendo3ds -o explorer.3dsx ./cmd/explorer

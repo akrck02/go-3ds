@@ -49,6 +49,21 @@ On a New 3DS XL: the explorer at 60 frames a second, steady while the camera mov
 6 ms a frame, processor under 1 ms), in 3D with the slider. Its go-ui panel is checked in the
 Azahar emulator: tabs, buttons, the slider and the switch answer clicks on the bottom screen.
 
+## Before writing a larger program
+
+The explorer is small. A program with a large scene and an interface of its own (a few hundred
+things on screen, data read at start) ran into the console's limits first, and these were the
+ways through. Each repository keeps the part that is its own:
+
+| Where | What it says |
+|---|---|
+| tinygo-3ds, `NINTENDO3DS.md` | How the heap is used, what makes garbage in TinyGo that would not in Go, how to find where it comes from, and the New 3DS's fast mode |
+| go-renderer, `docs/3ds.md` | Keeping a frame short: what the overlay costs, pixel-art shapes, the scene's drawing in both eyes, waiting for the GPU |
+| go-ui, `docs/3ds.md` | Writing an interface for the console: frame times, themes, closures, texts, game looks, the buttons |
+
+In short: measure on the console by phase, make no garbage in a steady frame, and keep what
+changes every frame small.
+
 ## Not yet
 
 - The second core and the New 3DS's C-stick.

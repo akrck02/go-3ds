@@ -1,5 +1,7 @@
 # go-3ds
 
+New here? Follow [the 3DS quest](quest.md): a Go program on the console in 5 short levels.
+
 ## What is where
 
 | Piece | What it does |

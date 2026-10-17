@@ -1,3 +1,5 @@
+<p align="center"><img alt="" src="images/logo.svg" width="120"></p>
+
 # Welcome to go-3ds 👋
 
 **go-3ds runs Go programs on the Nintendo 3DS**: a 3D island on the top screen, buttons and sliders you touch on the bottom one, and real 3D with the slider.

@@ -4,7 +4,7 @@ go 1.25.6
 
 require (
 	github.com/akrck02/go-renderer v0.0.0
-	github.com/akrck02/go-ui v0.0.0-20261015201303-b9d6974e13e3
+	github.com/akrck02/go-ui v0.0.0-20261017105744-75b1f92d6b1c
 )
 
 require (
@@ -15,4 +15,4 @@ require (
 
 // go-ui asks for go-renderer v0.0.0 (it builds against a local copy); this is go-renderer's
 // feature/3ds, which has ctr.
-replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261017001815-e5ffd0e12912
+replace github.com/akrck02/go-renderer => github.com/akrck02/go-renderer v0.0.0-20261017105741-76ca23f13554

@@ -1,0 +1,670 @@
+<h1 id="the-3ds-quest">The 3DS quest</h1>
+
+<p>Put a Go program on a Nintendo 3DS, one level at a time. Each level teaches one piece of go-3ds
+and ends with a <code>.3dsx</code> you can run in an emulator or on the console.</p>
+
+<p><img src="./images/quest/quest-map.svg" alt="The quest map: a road from START through 5 levels — Homebrewer, Islander, Navigator, Touch designer and Stereoscopist — to a final challenge, Console owner" /></p>
+
+<p>We start with words on the bottom screen, then put go-renderer&rsquo;s sample island on the top one,
+turn it with the circle pad, add a go-ui panel to touch below, switch on the real 3D, and finally
+copy it to an SD card.</p>
+
+<hr>
+
+<p>Every level has the same shape: <strong>the idea</strong> (explained with something from everyday life), <strong>the
+code</strong>, a <strong>checkpoint</strong> to know it works, and an optional <strong>bonus</strong>.</p>
+
+<hr>
+
+<h2 id="before-you-start">Before you start</h2>
+
+<p>You need:</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Why</th>
+<th>Where</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>TinyGo with the <code>nintendo3ds</code> target</strong></td>
+<td>Go does not build for the 3DS; this fork of TinyGo does</td>
+<td><a href="https://github.com/akrck02/tinygo-3ds" target="_blank">tinygo-3ds</a>, branch <code>feature/3ds</code>, built against a system LLVM (its <code>NINTENDO3DS.md</code>)</td>
+</tr>
+
+<tr>
+<td><strong>devkitPro&rsquo;s 3DS packages</strong></td>
+<td>The console&rsquo;s libraries: libctru, citro3d, 3dstools</td>
+<td>devkitARM in <code>/opt/devkitpro</code> (<a href="https://devkitpro.org/wiki/Getting_Started" target="_blank">devkitpro.org</a>)</td>
+</tr>
+
+<tr>
+<td><strong>An emulator</strong> (optional)</td>
+<td>To try a program without the console</td>
+<td><a href="https://azahar-emu.org" target="_blank">Azahar</a></td>
+</tr>
+</tbody>
+</table>
+<p>Clone go-3ds and make a module for the quest beside it. go-3ds&rsquo;s <code>go.mod</code> pins the versions of
+go-renderer and go-ui that draw on the console; copy its <code>replace</code> line:</p>
+<pre><code class="language-sh">git clone https://github.com/akrck02/go-3ds
+mkdir homebrew <span class="o">&amp;&amp;</span> <span class="nb">cd</span> homebrew
+go mod init example.com/homebrew
+go mod edit -require github.com/akrck02/go-3ds@v0.0.0 -replace github.com/akrck02/go-3ds<span class="o">=</span>../go-3ds
+grep <span class="s1">&#39;^replace github.com/akrck02/go-renderer&#39;</span> ../go-3ds/go.mod &gt;&gt; go.mod
+</code></pre>
+
+<p>Build any level, and open it:</p>
+<pre><code class="language-sh">go mod tidy
+tinygo build -target<span class="o">=</span>nintendo3ds -o hello.3dsx ./hello
+azahar hello.3dsx
+</code></pre>
+
+<p>Every file starts with <code>//go:build nintendo3ds</code>: these programs only build for the console.</p>
+
+<hr>
+
+<h2 id="level-1-the-homebrewer">Level 1 · The Homebrewer</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mission</th>
+<th>Pieces</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>A colour above, words below, and the buttons you press</td>
+<td><code>ctr.Open</code>, <code>OpenBottomConsole</code>, <code>app.Run</code>, frames</td>
+<td>10 min</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="the-idea">The idea</h4>
+
+<p>A game console runs a <strong>flip book</strong>: sixty pages a second, each drawn and then shown. Your program
+is called once a page (<code>app.Run</code>&rsquo;s function), reads the buttons, draws, and hands the page over
+(<code>ctr.EndFrame</code>), which waits for the screen.</p>
+
+<p>Homebrew is a program the console was not sold with, opened from the <strong>Homebrew Launcher</strong>.</p>
+
+<h4 id="build-it">Build it</h4>
+
+<p><code>hello/main.go</code>:</p>
+<pre><code class="language-go"><span class="cp">//go:build nintendo3ds</span>
+
+<span class="c1">// Your first homebrew: a colour on the top screen, words on the bottom one, and the buttons you</span>
+<span class="c1">// press.</span>
+<span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;fmt&#34;</span>
+
+	<span class="s">&#34;github.com/akrck02/go-3ds/app&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/ctr&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/input&#34;</span>
+<span class="p">)</span>
+
+<span class="c1">// sea is the top screen&#39;s colour, 0xRRGGBBAA.</span>
+<span class="kd">const</span> <span class="nx">sea</span> <span class="p">=</span> <span class="mh">0x2a6f97ff</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">screen</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span> <span class="c1">// the graphics system and the top screen</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="k">defer</span> <span class="nx">screen</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+	<span class="nx">ctr</span><span class="p">.</span><span class="nf">OpenBottomConsole</span><span class="p">()</span> <span class="c1">// the bottom screen becomes a terminal: what the program prints goes there</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello from Go!&#34;</span><span class="p">)</span>
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Press A, B or the cross. START ends.&#34;</span><span class="p">)</span>
+
+	<span class="nx">keys</span> <span class="o">:=</span> <span class="p">[]</span><span class="nx">input</span><span class="p">.</span><span class="nx">Key</span><span class="p">{</span><span class="nx">input</span><span class="p">.</span><span class="nx">KeyEnter</span><span class="p">,</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyEscape</span><span class="p">,</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyUp</span><span class="p">,</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyDown</span><span class="p">,</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyLeft</span><span class="p">,</span> <span class="nx">input</span><span class="p">.</span><span class="nx">KeyRight</span><span class="p">}</span>
+	<span class="nx">names</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">string</span><span class="p">{</span><span class="s">&#34;A&#34;</span><span class="p">,</span> <span class="s">&#34;B&#34;</span><span class="p">,</span> <span class="s">&#34;up&#34;</span><span class="p">,</span> <span class="s">&#34;down&#34;</span><span class="p">,</span> <span class="s">&#34;left&#34;</span><span class="p">,</span> <span class="s">&#34;right&#34;</span><span class="p">}</span>
+	<span class="nx">app</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="kd">func</span><span class="p">(</span><span class="nx">frame</span> <span class="nx">app</span><span class="p">.</span><span class="nx">Frame</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+		<span class="k">for</span> <span class="nx">index</span><span class="p">,</span> <span class="nx">key</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">keys</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Pressed</span><span class="p">(</span><span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;pressed&#34;</span><span class="p">,</span> <span class="nx">names</span><span class="p">[</span><span class="nx">index</span><span class="p">])</span>
+			<span class="p">}</span>
+		<span class="p">}</span>
+		<span class="nx">ctr</span><span class="p">.</span><span class="nf">BeginFrame</span><span class="p">()</span>
+		<span class="nx">screen</span><span class="p">.</span><span class="nf">Clear</span><span class="p">(</span><span class="nx">sea</span><span class="p">)</span>
+		<span class="nx">ctr</span><span class="p">.</span><span class="nf">EndFrame</span><span class="p">()</span> <span class="c1">// waits for the screen: one frame each sixtieth of a second</span>
+		<span class="k">return</span> <span class="kc">true</span>    <span class="c1">// false would end the program</span>
+	<span class="p">})</span>
+<span class="p">}</span>
+</code></pre>
+
+<p><code>ctr.Open</code> starts the graphics: always first. <code>app.Run</code> reads the controls into go-renderer&rsquo;s
+<code>input.State</code>, the same as on a desktop: <strong>A</strong> is Enter, <strong>B</strong> is Escape, the cross is the arrows.</p>
+
+<h4 id="checkpoint">Checkpoint</h4>
+
+<p>The top screen is sea blue; the bottom one says <em>Hello from Go!</em>, and a line for every button you
+press. <strong>START</strong> ends the program.</p>
+
+<p><img src="./images/quest/level-1.png" alt="Level 1: a blue top screen, and Hello from Go! on the bottom one" /></p>
+
+<h4 id="bonus-optional-count-the-frames">Bonus (optional): count the frames</h4>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+<pre><code>frames := 0
+app.Run(func(frame app.Frame) bool {
+	frames++
+	if frames%60 == 0 {
+		fmt.Println(frames/60, "seconds")
+	}
+	…</code></pre>
+
+On the console it counts real seconds: sixty frames each.
+
+</details>
+
+<p><img src="./images/quest/achievement-homebrewer.svg" alt="Achievement unlocked: Homebrewer" /></p>
+
+<hr>
+
+<h2 id="level-2-the-islander">Level 2 · The Islander</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mission</th>
+<th>Pieces</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>The sample island in 3D on the top screen</td>
+<td><code>ctr.NewSceneRenderer</code>, <code>Draw</code>, a camera</td>
+<td>5 min</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="the-idea-1">The idea</h4>
+
+<p>go-renderer describes a scene the same way everywhere; only the <strong>painter</strong> changes. On the
+desktop it is OpenGL or Metal; on the 3DS it is citro3d, the console&rsquo;s own, through <code>ctr</code>. The
+scene, the camera and the sample island are the same as on a computer.</p>
+
+<h4 id="build-it-1">Build it</h4>
+
+<p><code>island/main.go</code>:</p>
+<pre><code class="language-go"><span class="cp">//go:build nintendo3ds</span>
+
+<span class="c1">// The sample island on the top screen, seen from a camera that stands still.</span>
+<span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;github.com/akrck02/go-3ds/app&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/ctr&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/graphics&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/models&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/scene/sample&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">screen</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="k">defer</span> <span class="nx">screen</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+	<span class="nx">renderer</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">NewSceneRenderer</span><span class="p">(</span><span class="nx">screen</span><span class="p">)</span> <span class="c1">// draws a go-renderer scene through citro3d</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+
+	<span class="nx">world</span> <span class="o">:=</span> <span class="nx">sample</span><span class="p">.</span><span class="nf">Island</span><span class="p">()</span> <span class="c1">// the same made-up island the desktop viewer opens with -sample island</span>
+	<span class="nx">view</span> <span class="o">:=</span> <span class="nx">models</span><span class="p">.</span><span class="nx">Camera</span><span class="p">{</span>
+		<span class="nx">Position</span><span class="p">:</span> <span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="mi">300</span><span class="p">,</span> <span class="mi">220</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="c1">// metres east, up and south of the middle</span>
+		<span class="nx">Target</span><span class="p">:</span>   <span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span>
+		<span class="nx">Up</span><span class="p">:</span>       <span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span>
+		<span class="nx">Far</span><span class="p">:</span>      <span class="mi">20000</span><span class="p">,</span>
+	<span class="p">}</span>
+	<span class="nx">app</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="kd">func</span><span class="p">(</span><span class="nx">frame</span> <span class="nx">app</span><span class="p">.</span><span class="nx">Frame</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+		<span class="nx">renderer</span><span class="p">.</span><span class="nf">Draw</span><span class="p">(</span><span class="nx">world</span><span class="p">,</span> <span class="nx">view</span><span class="p">)</span> <span class="c1">// begins the frame, draws and shows it</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">})</span>
+<span class="p">}</span>
+</code></pre>
+
+<h4 id="checkpoint-1">Checkpoint</h4>
+
+<p>The island in the middle of the sea, with its forest and village, under a hazy sky.</p>
+
+<p><img src="./images/quest/level-2.png" alt="Level 2: the island on the top screen" /></p>
+
+<p><img src="./images/quest/achievement-islander.svg" alt="Achievement unlocked: Islander" /></p>
+
+<p>Learn more: <a href="https://github.com/akrck02/go-renderer/blob/feature/3ds/docs/3ds.md" target="_blank">go-renderer on the 3DS</a></p>
+
+<hr>
+
+<h2 id="level-3-the-navigator">Level 3 · The Navigator</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mission</th>
+<th>Pieces</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Turn round the island with the circle pad</td>
+<td><code>frame.Reading.Circle</code>, <code>camera.Orbit</code></td>
+<td>6 min</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="the-idea-2">The idea</h4>
+
+<p>The <strong>circle pad</strong> is a joystick: it says how far it is pushed each way, from −1 to 1. The orbit
+camera is the desktop viewer&rsquo;s: it circles round a point, and here the pad turns it instead of the
+mouse. The cross and <strong>L</strong>, <strong>R</strong> already speak the camera&rsquo;s language: arrows and minus, plus.</p>
+
+<h4 id="build-it-2">Build it</h4>
+<pre><code class="language-go"><span class="cp">//go:build nintendo3ds</span>
+
+<span class="c1">// The island on the top screen, turned with the circle pad and the cross, nearer and further with</span>
+<span class="c1">// L and R.</span>
+<span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;github.com/akrck02/go-3ds/app&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/camera&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/ctr&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/graphics&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/input&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/models&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/scene/sample&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">screen</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="k">defer</span> <span class="nx">screen</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+	<span class="nx">renderer</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">NewSceneRenderer</span><span class="p">(</span><span class="nx">screen</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">world</span> <span class="o">:=</span> <span class="nx">sample</span><span class="p">.</span><span class="nf">Island</span><span class="p">()</span>
+	<span class="nx">orbit</span> <span class="o">:=</span> <span class="nx">camera</span><span class="p">.</span><span class="nf">NewOrbit</span><span class="p">(</span><span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="mi">450</span><span class="p">)</span> <span class="c1">// the desktop viewer&#39;s orbit camera</span>
+	<span class="nx">orbit</span><span class="p">.</span><span class="nx">Pitch</span> <span class="p">=</span> <span class="mf">0.5</span>
+	<span class="nx">orbit</span><span class="p">.</span><span class="nx">Ground</span> <span class="p">=</span> <span class="nx">world</span><span class="p">.</span><span class="nx">GroundHeight</span> <span class="c1">// it never goes under the ground</span>
+	<span class="nx">view</span> <span class="o">:=</span> <span class="nx">models</span><span class="p">.</span><span class="nx">Camera</span><span class="p">{</span><span class="nx">Far</span><span class="p">:</span> <span class="mi">20000</span><span class="p">}</span>
+
+	<span class="nx">app</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="kd">func</span><span class="p">(</span><span class="nx">frame</span> <span class="nx">app</span><span class="p">.</span><span class="nx">Frame</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+		<span class="c1">// The circle pad, from −1 to 1 each way: turn left and right, tilt up and down.</span>
+		<span class="nx">circleX</span><span class="p">,</span> <span class="nx">circleY</span> <span class="o">:=</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Reading</span><span class="p">.</span><span class="nf">Circle</span><span class="p">()</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nx">Yaw</span> <span class="o">-=</span> <span class="nx">circleX</span> <span class="o">*</span> <span class="mf">1.8</span> <span class="o">*</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nx">Pitch</span> <span class="o">+=</span> <span class="nx">circleY</span> <span class="o">*</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span>
+		<span class="c1">// The cross is the arrows and L, R are minus and plus, which the orbit already reads; the</span>
+		<span class="c1">// touch screen is left out, so a finger does not turn the island.</span>
+		<span class="nx">keys</span> <span class="o">:=</span> <span class="o">*</span><span class="nx">frame</span><span class="p">.</span><span class="nx">Input</span>
+		<span class="nx">keys</span><span class="p">.</span><span class="nf">SetButton</span><span class="p">(</span><span class="nx">input</span><span class="p">.</span><span class="nx">MouseLeft</span><span class="p">,</span> <span class="kc">false</span><span class="p">)</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nf">Update</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">keys</span><span class="p">,</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">view</span><span class="p">)</span>
+
+		<span class="nx">renderer</span><span class="p">.</span><span class="nf">Draw</span><span class="p">(</span><span class="nx">world</span><span class="p">,</span> <span class="nx">view</span><span class="p">)</span> <span class="c1">// begins the frame, draws and shows it</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">})</span>
+<span class="p">}</span>
+</code></pre>
+
+<h4 id="checkpoint-2">Checkpoint</h4>
+
+<p>The same island, and now the circle pad turns round it and tilts it, the cross does too, <strong>L</strong> and
+<strong>R</strong> go further and nearer. The camera never sinks under the ground.</p>
+
+<p><img src="./images/quest/level-3.png" alt="Level 3: the island, ready to be turned" /></p>
+
+<h4 id="bonus-optional-a-slower-gentler-turn">Bonus (optional): a slower, gentler turn</h4>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
+
+</details>
+
+<p><img src="./images/quest/achievement-navigator.svg" alt="Achievement unlocked: Navigator" /></p>
+
+<hr>
+
+<h2 id="level-4-the-touch-designer">Level 4 · The Touch designer</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mission</th>
+<th>Pieces</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>A go-ui panel on the touch screen: the time of day</td>
+<td><code>bottom.New</code>, <code>Paint</code>, both screens in one frame</td>
+<td>10 min</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="the-idea-3">The idea</h4>
+
+<p>The bottom screen is a <strong>touch screen</strong>, so it is the pointer: a finger or the stylus presses
+go-ui&rsquo;s buttons and drags its sliders exactly as a mouse would. <code>bottom</code> lays a go-ui interface out
+there in a theme made for fingers, in the sea&rsquo;s colours.</p>
+
+<p>Both screens are drawn in <strong>one frame</strong>: between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>, the island
+with <code>PaintStereo</code> (Draw would begin and end a frame of its own) and then the panel.</p>
+
+<h4 id="build-it-3">Build it</h4>
+<pre><code class="language-go"><span class="cp">//go:build nintendo3ds</span>
+
+<span class="c1">// The island above, and below a go-ui panel touched with a finger: the time of day.</span>
+<span class="kn">package</span> <span class="nx">main</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&#34;fmt&#34;</span>
+	<span class="s">&#34;math&#34;</span>
+
+	<span class="s">&#34;github.com/akrck02/go-3ds/app&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-3ds/bottom&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/camera&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/ctr&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/graphics&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/input&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/models&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/scene&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-renderer/scene/sample&#34;</span>
+	<span class="nx">ui</span> <span class="s">&#34;github.com/akrck02/go-ui&#34;</span>
+<span class="p">)</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="nx">screen</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="k">defer</span> <span class="nx">screen</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+	<span class="nx">renderer</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">NewSceneRenderer</span><span class="p">(</span><span class="nx">screen</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">panel</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">bottom</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="nx">bottom</span><span class="p">.</span><span class="nf">Theme</span><span class="p">())</span> <span class="c1">// go-ui on the bottom screen, in a theme for fingers</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
+		<span class="k">return</span>
+	<span class="p">}</span>
+	<span class="nx">world</span> <span class="o">:=</span> <span class="nx">sample</span><span class="p">.</span><span class="nf">Island</span><span class="p">()</span>
+	<span class="nx">orbit</span> <span class="o">:=</span> <span class="nx">camera</span><span class="p">.</span><span class="nf">NewOrbit</span><span class="p">(</span><span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="mi">450</span><span class="p">)</span>
+	<span class="nx">orbit</span><span class="p">.</span><span class="nx">Pitch</span> <span class="p">=</span> <span class="mf">0.5</span>
+	<span class="nx">orbit</span><span class="p">.</span><span class="nx">Ground</span> <span class="p">=</span> <span class="nx">world</span><span class="p">.</span><span class="nx">GroundHeight</span>
+	<span class="nx">view</span> <span class="o">:=</span> <span class="nx">models</span><span class="p">.</span><span class="nx">Camera</span><span class="p">{</span><span class="nx">Far</span><span class="p">:</span> <span class="mi">20000</span><span class="p">}</span>
+	<span class="nx">hour</span><span class="p">,</span> <span class="nx">litHour</span> <span class="o">:=</span> <span class="nb">float32</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="nb">float32</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+	<span class="nx">app</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="kd">func</span><span class="p">(</span><span class="nx">frame</span> <span class="nx">app</span><span class="p">.</span><span class="nx">Frame</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span>
+		<span class="nx">circleX</span><span class="p">,</span> <span class="nx">circleY</span> <span class="o">:=</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Reading</span><span class="p">.</span><span class="nf">Circle</span><span class="p">()</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nx">Yaw</span> <span class="o">-=</span> <span class="nx">circleX</span> <span class="o">*</span> <span class="mf">1.8</span> <span class="o">*</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nx">Pitch</span> <span class="o">+=</span> <span class="nx">circleY</span> <span class="o">*</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span>
+		<span class="nx">keys</span> <span class="o">:=</span> <span class="o">*</span><span class="nx">frame</span><span class="p">.</span><span class="nx">Input</span>
+		<span class="nx">keys</span><span class="p">.</span><span class="nf">SetButton</span><span class="p">(</span><span class="nx">input</span><span class="p">.</span><span class="nx">MouseLeft</span><span class="p">,</span> <span class="kc">false</span><span class="p">)</span>
+		<span class="nx">orbit</span><span class="p">.</span><span class="nf">Update</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">keys</span><span class="p">,</span> <span class="nx">frame</span><span class="p">.</span><span class="nx">Seconds</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">view</span><span class="p">)</span>
+
+		<span class="c1">// Both screens in one frame: Paint* draws inside it, where Draw would begin and end its own.</span>
+		<span class="nx">ctr</span><span class="p">.</span><span class="nf">BeginFrame</span><span class="p">()</span>
+		<span class="nx">renderer</span><span class="p">.</span><span class="nf">PaintStereo</span><span class="p">(</span><span class="nx">world</span><span class="p">,</span> <span class="nx">view</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">// one picture: no separation between the eyes</span>
+		<span class="nx">panel</span><span class="p">.</span><span class="nf">Paint</span><span class="p">(</span><span class="nx">frame</span><span class="p">.</span><span class="nx">Input</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">context</span> <span class="o">*</span><span class="nx">ui</span><span class="p">.</span><span class="nx">Context</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">context</span><span class="p">.</span><span class="nf">Box</span><span class="p">(</span><span class="nx">ui</span><span class="p">.</span><span class="nx">Layout</span><span class="p">{</span><span class="nx">Direction</span><span class="p">:</span> <span class="nx">ui</span><span class="p">.</span><span class="nx">Vertical</span><span class="p">,</span> <span class="nx">Width</span><span class="p">:</span> <span class="nx">ui</span><span class="p">.</span><span class="nf">Grow</span><span class="p">(),</span> <span class="nx">Padding</span><span class="p">:</span> <span class="nx">ui</span><span class="p">.</span><span class="nf">Pad</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span> <span class="nx">Gap</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> <span class="kd">func</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nx">context</span><span class="p">.</span><span class="nf">Heading</span><span class="p">(</span><span class="s">&#34;The island&#34;</span><span class="p">)</span>
+				<span class="nx">context</span><span class="p">.</span><span class="nf">Label</span><span class="p">(</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Sprintf</span><span class="p">(</span><span class="s">&#34;%02d:00&#34;</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nx">hour</span><span class="p">)))</span>
+				<span class="nx">context</span><span class="p">.</span><span class="nf">SliderStep</span><span class="p">(</span><span class="s">&#34;hour&#34;</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">hour</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+				<span class="k">if</span> <span class="nx">context</span><span class="p">.</span><span class="nf">Button</span><span class="p">(</span><span class="s">&#34;Noon&#34;</span><span class="p">)</span> <span class="p">{</span>
+					<span class="nx">hour</span> <span class="p">=</span> <span class="mi">12</span>
+				<span class="p">}</span>
+			<span class="p">})</span>
+		<span class="p">})</span>
+		<span class="nx">ctr</span><span class="p">.</span><span class="nf">EndFrame</span><span class="p">()</span>
+
+		<span class="c1">// A new light works the island&#39;s colours out again on the processor: only once the finger</span>
+		<span class="c1">// leaves the screen, or every step of a drag would stutter.</span>
+		<span class="k">if</span> <span class="nx">hour</span> <span class="o">!=</span> <span class="nx">litHour</span> <span class="o">&amp;&amp;</span> <span class="p">!</span><span class="nx">frame</span><span class="p">.</span><span class="nx">Input</span><span class="p">.</span><span class="nf">Button</span><span class="p">(</span><span class="nx">input</span><span class="p">.</span><span class="nx">MouseLeft</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nf">light</span><span class="p">(</span><span class="nx">world</span><span class="p">,</span> <span class="nx">hour</span><span class="p">)</span>
+			<span class="nx">litHour</span> <span class="p">=</span> <span class="nx">hour</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="kc">true</span>
+	<span class="p">})</span>
+<span class="p">}</span>
+
+<span class="c1">// light puts the sun where it is at an hour: rising in the east at six, highest at noon, setting</span>
+<span class="c1">// in the west at six in the evening.</span>
+<span class="kd">func</span> <span class="nf">light</span><span class="p">(</span><span class="nx">world</span> <span class="o">*</span><span class="nx">scene</span><span class="p">.</span><span class="nx">Scene</span><span class="p">,</span> <span class="nx">hour</span> <span class="kt">float32</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">angle</span> <span class="o">:=</span> <span class="nb">float64</span><span class="p">(</span><span class="nx">hour</span><span class="o">-</span><span class="mi">6</span><span class="p">)</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="nx">math</span><span class="p">.</span><span class="nx">Pi</span>
+	<span class="nx">elevation</span> <span class="o">:=</span> <span class="nx">math</span><span class="p">.</span><span class="nf">Sin</span><span class="p">(</span><span class="nx">angle</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
+	<span class="nx">sun</span> <span class="o">:=</span> <span class="nx">graphics</span><span class="p">.</span><span class="nx">Vec4</span><span class="p">{</span><span class="nb">float32</span><span class="p">(</span><span class="o">-</span><span class="nx">math</span><span class="p">.</span><span class="nf">Cos</span><span class="p">(</span><span class="nx">angle</span><span class="p">)</span> <span class="o">*</span> <span class="nx">math</span><span class="p">.</span><span class="nf">Cos</span><span class="p">(</span><span class="nx">elevation</span><span class="p">)),</span> <span class="nb">float32</span><span class="p">(</span><span class="nx">math</span><span class="p">.</span><span class="nf">Sin</span><span class="p">(</span><span class="nx">elevation</span><span class="p">)),</span> <span class="nb">float32</span><span class="p">(</span><span class="o">-</span><span class="mf">0.35</span> <span class="o">*</span> <span class="nx">math</span><span class="p">.</span><span class="nf">Cos</span><span class="p">(</span><span class="nx">elevation</span><span class="p">)),</span> <span class="mi">0</span><span class="p">}</span>
+	<span class="nx">world</span><span class="p">.</span><span class="nx">Environment</span><span class="p">.</span><span class="nx">SunDirection</span> <span class="p">=</span> <span class="nx">sun</span><span class="p">.</span><span class="nf">Normalize</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The light is worked out again only once the finger leaves the screen: on the 3DS the island&rsquo;s
+colours are computed on the processor for each light, which would make a drag stutter.</p>
+
+<h4 id="checkpoint-3">Checkpoint</h4>
+
+<p>Below, <em>The island</em>, the hour and a slider: drag it and let go, and the island turns to evening or
+morning; <strong>Noon</strong> brings back the midday sun.</p>
+
+<p><img src="./images/quest/level-4.png" alt="Level 4: the island above, a panel with the hour and a slider below" /></p>
+
+<h4 id="bonus-optional-fog">Bonus (optional): fog</h4>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+<pre><code>fog := true
+…
+if context.Toggle("Fog", &amp;fog) {
+	world.Environment.FogNear, world.Environment.FogFar = 250, 900
+	if !fog {
+		world.Environment.FogFar = 0
+	}
+}</code></pre>
+
+</details>
+
+<p><img src="./images/quest/achievement-touch-designer.svg" alt="Achievement unlocked: Touch designer" /></p>
+
+<p>Learn more: <a href="https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md" target="_blank">go-ui on the 3DS</a></p>
+
+<hr>
+
+<h2 id="level-5-the-stereoscopist">Level 5 · The Stereoscopist</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mission</th>
+<th>Pieces</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Real 3D with the slider</td>
+<td><code>ctr.Slider3D</code>, <code>PaintStereo</code> with a separation</td>
+<td>4 min</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="the-idea-4">The idea</h4>
+
+<p>Your eyes are about <strong>six centimetres apart</strong>, and each sees the world a little differently; the
+brain makes depth of the difference. The 3DS&rsquo;s top screen shows each eye its own picture. The
+renderer draws the scene twice, from two eyes a little apart, as far apart as the <strong>3D slider</strong>
+on the console&rsquo;s side says.</p>
+
+<h4 id="build-it-4">Build it</h4>
+
+<p>Only the frame changes from level 4:</p>
+<pre><code class="language-go">		<span class="c1">// The 3D slider, from 0 to 1, sets how far apart the two eyes stand: a share of the</span>
+		<span class="c1">// distance to what the camera looks at. At 0 the screen shows one picture.</span>
+		<span class="nx">separation</span> <span class="o">:=</span> <span class="nx">ctr</span><span class="p">.</span><span class="nf">Slider3D</span><span class="p">()</span> <span class="o">*</span> <span class="nb">float32</span><span class="p">(</span><span class="nx">orbit</span><span class="p">.</span><span class="nx">Distance</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.03</span>
+
+		<span class="nx">ctr</span><span class="p">.</span><span class="nf">BeginFrame</span><span class="p">()</span>
+		<span class="nx">renderer</span><span class="p">.</span><span class="nf">PaintStereo</span><span class="p">(</span><span class="nx">world</span><span class="p">,</span> <span class="nx">view</span><span class="p">,</span> <span class="nx">separation</span><span class="p">,</span> <span class="nb">float32</span><span class="p">(</span><span class="nx">orbit</span><span class="p">.</span><span class="nx">Distance</span><span class="p">))</span>
+</code></pre>
+
+<p>What lies at the focal distance (the point the camera turns round) sits on the screen; nearer
+things come out of it, further ones go in.</p>
+
+<h4 id="checkpoint-4">Checkpoint</h4>
+
+<p>With the slider down, the same picture as before. Push it up on a console: the island stands out
+of the screen. (An emulator shows one eye.)</p>
+
+<p><img src="./images/quest/level-5.png" alt="Level 5: the island and the panel, ready for 3D" /></p>
+
+<p><img src="./images/quest/achievement-stereoscopist.svg" alt="Achievement unlocked: Stereoscopist" /></p>
+
+<hr>
+
+<h2 id="final-challenge-console-owner">Final challenge · Console owner</h2>
+
+<p>Run your program on a real New 3DS: copy it to the SD card, open it from the Homebrew Launcher,
+and share it with the notices it must carry.</p>
+
+<blockquote>
+<p><strong>Hint:</strong> the Homebrew Launcher lists the <code>.3dsx</code> files in <code>/3ds/</code> on the SD card. A <code>.3dsx</code>
+carries TinyGo, libctru, citro3d and newlib: their licences go with it.</p>
+</blockquote>
+
+<details>
+<summary>🔓 Show the solution</summary>
+
+1. `tinygo build -target=nintendo3ds -o island.3dsx ./island`
+2. Copy `island.3dsx` to `/3ds/` on the SD card (or send it over Wi-Fi with `3dslink`, from
+   devkitPro's 3dstools, while the Launcher waits with **Y**).
+3. Open the Homebrew Launcher and choose it.
+4. To share it, put go-3ds's [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) next to it.
+
+On a New 3DS XL the island runs at 60 frames a second, in 3D with the slider.
+
+</details>
+
+<p><img src="./images/quest/achievement-final.svg" alt="Rare achievement unlocked: Console owner" /></p>
+
+<hr>
+
+<h2 id="well-done">Well done</h2>
+
+<p><img src="./images/quest/achievements-all.svg" alt="All six achievements: Homebrewer, Islander, Navigator, Touch designer, Stereoscopist and Console owner" /></p>
+
+<p>You built Go for a handheld console: two screens, a 3D scene, its controls, an interface under
+your finger, and real 3D.</p>
+
+<h3 id="ideas-to-keep-going">Ideas to keep going</h3>
+
+<table>
+<thead>
+<tr>
+<th>Idea</th>
+<th>Difficulty</th>
+<th>Hint</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Fly to places on the island</td>
+<td>⭐</td>
+<td><code>cmd/explorer</code> eases the camera to a point chosen on its panel</td>
+</tr>
+
+<tr>
+<td>A map of the island on the panel</td>
+<td>⭐⭐</td>
+<td><code>cmd/explorer</code>&rsquo;s <code>islandMap</code>: a <code>draw2d.Image</code> drawn from <code>world.GroundHeight</code></td>
+</tr>
+
+<tr>
+<td>A go-ui application, unchanged</td>
+<td>⭐⭐</td>
+<td>go-ui&rsquo;s <code>window.Run</code> on its <code>feature/3ds</code> branch puts the scene above and the interface below</td>
+</tr>
+
+<tr>
+<td>Sound</td>
+<td>⭐⭐</td>
+<td><a href="https://github.com/akrck02/go-sound" target="_blank">go-sound</a> plays through the DSP; it needs <code>/3ds/dspfirm.cdc</code></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<table>
+<thead>
+<tr>
+<th>You see</th>
+<th>Why, and what to do</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><em>An exception occurred … Undefined Instruction</em>, PC 0</td>
+<td>Something of <code>ctr</code> was used before <code>ctr.Open</code>, such as <code>OpenBottomConsole</code>: open first</td>
+</tr>
+
+<tr>
+<td><em>Exception Type: Break</em> when drawing both screens</td>
+<td><code>Draw</code> begins and ends its own frame: inside <code>BeginFrame</code> … <code>EndFrame</code>, use <code>PaintStereo</code></td>
+</tr>
+
+<tr>
+<td><code>build constraints exclude all Go files</code> with <code>go build</code></td>
+<td>These programs are for TinyGo&rsquo;s <code>nintendo3ds</code> target only</td>
+</tr>
+
+<tr>
+<td>Works in the emulator, stops on the console</td>
+<td>The emulator forgives reads of unmapped memory: run it with go-3ds&rsquo;s <code>tools/run-in-azahar.sh</code>, which warns of them</td>
+</tr>
+
+<tr>
+<td>A drag on the panel stutters</td>
+<td>Work done every frame on the processor: do it when the finger leaves (<code>!frame.Input.Button(input.MouseLeft)</code>)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<p><a href="./readme">← All the documentation</a></p>

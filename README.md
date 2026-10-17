@@ -17,7 +17,7 @@ tinygo build -target=nintendo3ds -o explorer.3dsx ./cmd/explorer
 ```
 
 It needs a TinyGo with the `nintendo3ds` target and devkitPro's 3DS libraries. Everything is in
-[docs/](docs/README.md).
+[docs/](docs/README.md); to start, [the 3DS quest](docs/quest.md).
 
 ## License
 

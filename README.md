@@ -19,6 +19,12 @@ tinygo build -target=nintendo3ds -o explorer.3dsx ./cmd/explorer
 It needs a TinyGo with the `nintendo3ds` target and devkitPro's 3DS libraries. Everything is in
 [docs/](docs/README.md).
 
+## License
+
+MIT, in [LICENSE](LICENSE). A `.3dsx` built from this repository also carries TinyGo, libctru,
+citro3d, newlib and Go modules; their notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md),
+to keep next to any `.3dsx` you share.
+
 ## AI disclosure
 
 I write most of my code by hand, so I want to be clear about this project: **it was written by an

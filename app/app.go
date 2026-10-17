@@ -18,16 +18,15 @@ import "C"
 import (
 	"time"
 
-	"github.com/akrck02/go-3ds/controls"
 	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/input"
 )
 
 // Frame is what a program gets every frame.
 type Frame struct {
-	Input   *input.State     // keys, pointer and touches, as on the desktop
-	Reading controls.Reading // the hardware itself, for the circle pad
-	Seconds float64          // since the previous frame
+	Input   *input.State // keys, pointer and touches, as on the desktop
+	Reading ctr.Reading  // the hardware itself, for the circle pad
+	Seconds float64      // since the previous frame
 }
 
 // Run calls step once a frame, as fast as the screen shows frames (citro3d waits for it), until
@@ -37,11 +36,11 @@ func Run(step func(frame Frame) bool) {
 	state := input.NewState()
 	state.FramebufferWidth, state.FramebufferHeight = ctr.BottomWidth, ctr.BottomHeight
 	state.WindowWidth, state.WindowHeight = ctr.BottomWidth, ctr.BottomHeight // the touch screen, where the pointer is
-	var reader controls.Controls
+	var reader ctr.Controls
 	last := time.Now()
 	for ctr.Running() {
-		reading := controls.Read()
-		if reader.Pressed(reading)&controls.ButtonStart != 0 {
+		reading := ctr.ReadControls()
+		if reader.Pressed(reading)&ctr.ButtonStart != 0 {
 			return
 		}
 		reader.Apply(state, reading)

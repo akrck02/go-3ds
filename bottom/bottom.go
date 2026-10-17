@@ -2,7 +2,7 @@
 
 // Package bottom shows a go-ui interface on the Nintendo 3DS's bottom screen: go-ui lays it out
 // as a draw2d list, and go-renderer's ctr.FlatRenderer paints it. The touch screen is the pointer
-// (package controls), so buttons, sliders and tabs answer the finger or the stylus.
+// (go-renderer's ctr.Controls), so buttons, sliders and tabs answer the finger or the stylus.
 package bottom
 
 import (

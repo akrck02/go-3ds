@@ -4,9 +4,8 @@
 
 | Piece | What it does |
 |---|---|
-| `controls` | The buttons, the circle pad and the touch screen as go-renderer's `input.State`: the cross is the arrow keys, L and R are minus and plus, A is Enter, B is Escape and the system's back, and the touch screen is the pointer, so dragging works like dragging with a mouse. Turning a reading into input is plain Go, tested on any computer; reading the hardware (`read.go`) is built only for the 3DS. |
 | `bottom` | A go-ui interface on the bottom screen: go-ui lays it out, go-renderer's `ctr.FlatRenderer` paints it, the touch screen is its pointer. `bottom.Theme` is go-ui's dark theme made for 320 × 240 pixels a finger touches, in the sea's colours. |
-| `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame, START or the HOME menu to stop. |
+| `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame (go-renderer's `ctr.Controls`: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop. |
 | `cmd/explorer` | The sample island on the top screen, in 3D with the slider, and a go-ui panel on the bottom one: places to fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn the camera, L and R move it away and closer. |
 | `tools/run-in-azahar.sh` | Runs a `.3dsx` in the Azahar emulator without a screen (under Xvfb) and prints what the program wrote to the debug log; it also warns about reads and writes of unmapped memory, which stop a program on the console but not in the emulator. |
 
@@ -27,6 +26,10 @@ processor, which would make every step of a drag stutter.
 
 Both screens are drawn in one frame: the island with `ctr.SceneRenderer.PaintStereo`, the panel
 with `bottom.Interface.Paint`, between `ctr.BeginFrame` and `ctr.EndFrame`.
+
+A go-ui program with `window.Run` can also run on the console unchanged: go-ui's own window for
+the 3DS (its `feature/3ds` branch) puts the scene above and the interface below, and SELECT swaps
+them. The packages here are for programs with a loop of their own, like the explorer.
 
 ## What you need
 

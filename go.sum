@@ -1,5 +1,5 @@
-github.com/akrck02/go-renderer v0.0.0-20261016220812-408b56cb7fe8 h1:Z3/81HP8geGXDUiniOWxB1uGqh5hoptenD9BxnhGUBs=
-github.com/akrck02/go-renderer v0.0.0-20261016220812-408b56cb7fe8/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
+github.com/akrck02/go-renderer v0.0.0-20261017001815-e5ffd0e12912 h1:5vsejRy5g+P1fBpqM2ohx3D84RIaVH6jecMb+JUTVdg=
+github.com/akrck02/go-renderer v0.0.0-20261017001815-e5ffd0e12912/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
 github.com/akrck02/go-ui v0.0.0-20261015201303-b9d6974e13e3 h1:NFGgIALe3sb8fWiA/y27A82IWoYG4F7AicsruaQkUZ0=
 github.com/akrck02/go-ui v0.0.0-20261015201303-b9d6974e13e3/go.mod h1:a0uwlVS2H8pinhpefogGLjLYwfwcgFD/iriCHCxU3CI=
 golang.org/x/image v0.45.0 h1:FMb1nTbH5H9vF55SriQHgFw5GnNL9Jg6L25BwXKzhB0=

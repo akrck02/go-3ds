@@ -1,6 +1,7 @@
-# go-3ds
+# What is where
 
-New here? Follow [the 3DS quest](quest.md): a Go program on the console in 5 short levels.
+The packages of go-3ds, the explorer it comes with, what you need to build for the console, and what was checked on a real New 3DS XL.
+
 
 ## What is where
 

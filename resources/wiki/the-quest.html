@@ -1,12 +1,12 @@
 <h1 id="the-3ds-quest">The 3DS quest</h1>
 
-<p>Put a Go program on a Nintendo 3DS, one level at a time. Each level teaches one piece of go-3ds
+<p>Put a Go program on a Nintendo 3DS, one level at a time. Each level teaches one piece of Go for 3DS
 and ends with a <code>.3dsx</code> you can run in an emulator or on the console.</p>
 
 <p><img src="./images/quest/quest-map.svg" alt="The quest map: a road from START through 5 levels — Homebrewer, Islander, Navigator, Touch designer and Stereoscopist — to a final challenge, Console owner" /></p>
 
-<p>We start with words on the bottom screen, then put go-renderer&rsquo;s sample island on the top one,
-turn it with the circle pad, add a go-ui panel to touch below, switch on the real 3D, and finally
+<p>We start with words on the bottom screen, then put Go Renderer&rsquo;s sample island on the top one,
+turn it with the circle pad, add a Go UI panel to touch below, switch on the real 3D, and finally
 copy it to an SD card.</p>
 
 <hr>
@@ -49,8 +49,8 @@ code</strong>, a <strong>checkpoint</strong> to know it works, and an optional <
 </tr>
 </tbody>
 </table>
-<p>Clone go-3ds and make a module for the quest beside it. go-3ds&rsquo;s <code>go.mod</code> pins the versions of
-go-renderer and go-ui that draw on the console; copy its <code>replace</code> line:</p>
+<p>Clone Go for 3DS and make a module for the quest beside it. Go for 3DS&rsquo;s <code>go.mod</code> pins the versions of
+Go Renderer and Go UI that draw on the console; copy its <code>replace</code> line:</p>
 <pre><code class="language-sh">git clone https://github.com/akrck02/go-3ds
 mkdir homebrew <span class="o">&amp;&amp;</span> <span class="nb">cd</span> homebrew
 go mod init example.com/homebrew
@@ -143,7 +143,7 @@ is called once a page (<code>app.Run</code>&rsquo;s function), reads the buttons
 <span class="p">}</span>
 </code></pre>
 
-<p><code>ctr.Open</code> starts the graphics: always first. <code>app.Run</code> reads the controls into go-renderer&rsquo;s
+<p><code>ctr.Open</code> starts the graphics: always first. <code>app.Run</code> reads the controls into Go Renderer&rsquo;s
 <code>input.State</code>, the same as on a desktop: <strong>A</strong> is Enter, <strong>B</strong> is Escape, the cross is the arrows.</p>
 
 <h4 id="checkpoint">Checkpoint</h4>
@@ -196,7 +196,7 @@ On the console it counts real seconds: sixty frames each.
 
 <h4 id="the-idea-1">The idea</h4>
 
-<p>go-renderer describes a scene the same way everywhere; only the <strong>painter</strong> changes. On the
+<p>Go Renderer describes a scene the same way everywhere; only the <strong>painter</strong> changes. On the
 desktop it is OpenGL or Metal; on the 3DS it is citro3d, the console&rsquo;s own, through <code>ctr</code>. The
 scene, the camera and the sample island are the same as on a computer.</p>
 
@@ -251,7 +251,7 @@ scene, the camera and the sample island are the same as on a computer.</p>
 
 <p><img src="./images/quest/achievement-islander.svg" alt="Achievement unlocked: Islander" /></p>
 
-<p>Learn more: <a href="https://github.com/akrck02/go-renderer/blob/feature/3ds/docs/3ds.md" target="_blank">go-renderer on the 3DS</a></p>
+<p>Learn more: <a href="https://github.com/akrck02/go-renderer/blob/feature/3ds/docs/3ds.md" target="_blank">Go Renderer on the 3DS</a></p>
 
 <hr>
 
@@ -366,7 +366,7 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 
 <tbody>
 <tr>
-<td>A go-ui panel on the touch screen: the time of day</td>
+<td>A Go UI panel on the touch screen: the time of day</td>
 <td><code>bottom.New</code>, <code>Paint</code>, both screens in one frame</td>
 <td>10 min</td>
 </tr>
@@ -376,7 +376,7 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 <h4 id="the-idea-3">The idea</h4>
 
 <p>The bottom screen is a <strong>touch screen</strong>, so it is the pointer: a finger or the stylus presses
-go-ui&rsquo;s buttons and drags its sliders exactly as a mouse would. <code>bottom</code> lays a go-ui interface out
+Go UI&rsquo;s buttons and drags its sliders exactly as a mouse would. <code>bottom</code> lays a Go UI interface out
 there in a theme made for fingers, in the sea&rsquo;s colours.</p>
 
 <p>Both screens are drawn in <strong>one frame</strong>: between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>, the island
@@ -499,7 +499,7 @@ if context.Toggle("Fog", &amp;fog) {
 
 <p><img src="./images/quest/achievement-touch-designer.svg" alt="Achievement unlocked: Touch designer" /></p>
 
-<p>Learn more: <a href="https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md" target="_blank">go-ui on the 3DS</a></p>
+<p>Learn more: <a href="https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md" target="_blank">Go UI on the 3DS</a></p>
 
 <hr>
 
@@ -572,7 +572,7 @@ carries TinyGo, libctru, citro3d and newlib: their licences go with it.</p>
 2. Copy `island.3dsx` to `/3ds/` on the SD card (or send it over Wi-Fi with `3dslink`, from
    devkitPro's 3dstools, while the Launcher waits with **Y**).
 3. Open the Homebrew Launcher and choose it.
-4. To share it, put go-3ds's [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) next to it.
+4. To share it, put Go for 3DS's [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) next to it.
 
 On a New 3DS XL the island runs at 60 frames a second, in 3D with the slider.
 
@@ -614,15 +614,15 @@ your finger, and real 3D.</p>
 </tr>
 
 <tr>
-<td>A go-ui application, unchanged</td>
+<td>A Go UI application, unchanged</td>
 <td>⭐⭐</td>
-<td>go-ui&rsquo;s <code>window.Run</code> on its <code>feature/3ds</code> branch puts the scene above and the interface below</td>
+<td>Go UI&rsquo;s <code>window.Run</code> on its <code>feature/3ds</code> branch puts the scene above and the interface below</td>
 </tr>
 
 <tr>
 <td>Sound</td>
 <td>⭐⭐</td>
-<td><a href="https://github.com/akrck02/go-sound" target="_blank">go-sound</a> plays through the DSP; it needs <code>/3ds/dspfirm.cdc</code></td>
+<td><a href="https://github.com/akrck02/go-sound" target="_blank">Go Sound</a> plays through the DSP; it needs <code>/3ds/dspfirm.cdc</code></td>
 </tr>
 </tbody>
 </table>
@@ -655,7 +655,7 @@ your finger, and real 3D.</p>
 
 <tr>
 <td>Works in the emulator, stops on the console</td>
-<td>The emulator forgives reads of unmapped memory: run it with go-3ds&rsquo;s <code>tools/run-in-azahar.sh</code>, which warns of them</td>
+<td>The emulator forgives reads of unmapped memory: run it with Go for 3DS&rsquo;s <code>tools/run-in-azahar.sh</code>, which warns of them</td>
 </tr>
 
 <tr>

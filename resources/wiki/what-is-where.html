@@ -1,6 +1,6 @@
 <h1 id="what-is-where">What is where</h1>
 
-<p>The packages of go-3ds, the explorer it comes with, what you need to build for the console, and what was checked on a real New 3DS XL.</p>
+<p>The packages of Go for 3DS, the explorer it comes with, what you need to build for the console, and what was checked on a real New 3DS XL.</p>
 
 <h2 id="what-is-where-1">What is where</h2>
 
@@ -15,17 +15,17 @@
 <tbody>
 <tr>
 <td><code>bottom</code></td>
-<td>A go-ui interface on the bottom screen: go-ui lays it out, go-renderer&rsquo;s <code>ctr.FlatRenderer</code> paints it, the touch screen is its pointer. <code>bottom.Theme</code> is go-ui&rsquo;s dark theme made for 320 × 240 pixels a finger touches, in the sea&rsquo;s colours.</td>
+<td>A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer&rsquo;s <code>ctr.FlatRenderer</code> paints it, the touch screen is its pointer. <code>bottom.Theme</code> is Go UI&rsquo;s dark theme made for 320 × 240 pixels a finger touches, in the sea&rsquo;s colours.</td>
 </tr>
 
 <tr>
 <td><code>app</code></td>
-<td>The program loop: the New 3DS&rsquo;s fast clock, the controls into the input state every frame (go-renderer&rsquo;s <code>ctr.Controls</code>: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop.</td>
+<td>The program loop: the New 3DS&rsquo;s fast clock, the controls into the input state every frame (Go Renderer&rsquo;s <code>ctr.Controls</code>: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop.</td>
 </tr>
 
 <tr>
 <td><code>cmd/explorer</code></td>
-<td>The sample island on the top screen, in 3D with the slider, and a go-ui panel on the bottom one: places to fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn the camera, L and R move it away and closer.</td>
+<td>The sample island on the top screen, in 3D with the slider, and a Go UI panel on the bottom one: places to fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn the camera, L and R move it away and closer.</td>
 </tr>
 
 <tr>
@@ -53,7 +53,7 @@ processor, which would make every step of a drag stutter.</p>
 <p>Both screens are drawn in one frame: the island with <code>ctr.SceneRenderer.PaintStereo</code>, the panel
 with <code>bottom.Interface.Paint</code>, between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>.</p>
 
-<p>A go-ui program with <code>window.Run</code> can also run on the console unchanged: go-ui&rsquo;s own window for
+<p>A Go UI program with <code>window.Run</code> can also run on the console unchanged: Go UI&rsquo;s own window for
 the 3DS (its <code>feature/3ds</code> branch) puts the scene above and the interface below, and SELECT swaps
 them. The packages here are for programs with a loop of their own, like the explorer.</p>
 
@@ -72,7 +72,7 @@ system LLVM.</li>
 <h2 id="what-was-checked">What was checked</h2>
 
 <p>On a New 3DS XL: the explorer at 60 frames a second, steady while the camera moves fast (GPU about
-6 ms a frame, processor under 1 ms), in 3D with the slider. Its go-ui panel is checked in the
+6 ms a frame, processor under 1 ms), in 3D with the slider. Its Go UI panel is checked in the
 Azahar emulator: tabs, buttons, the slider and the switch answer clicks on the bottom screen.</p>
 
 <h2 id="before-writing-a-larger-program">Before writing a larger program</h2>
@@ -96,12 +96,12 @@ ways through. Each repository keeps the part that is its own:</p>
 </tr>
 
 <tr>
-<td>go-renderer, <code>docs/3ds.md</code></td>
+<td>Go Renderer, <code>docs/3ds.md</code></td>
 <td>Keeping a frame short: what the overlay costs, pixel-art shapes, the scene&rsquo;s drawing in both eyes, waiting for the GPU</td>
 </tr>
 
 <tr>
-<td>go-ui, <code>docs/3ds.md</code></td>
+<td>Go UI, <code>docs/3ds.md</code></td>
 <td>Writing an interface for the console: frame times, themes, closures, texts, game looks, the buttons</td>
 </tr>
 </tbody>

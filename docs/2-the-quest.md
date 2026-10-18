@@ -1,12 +1,12 @@
 # The 3DS quest
 
-Put a Go program on a Nintendo 3DS, one level at a time. Each level teaches one piece of go-3ds
+Put a Go program on a Nintendo 3DS, one level at a time. Each level teaches one piece of Go for 3DS
 and ends with a `.3dsx` you can run in an emulator or on the console.
 
 ![The quest map: a road from START through 5 levels — Homebrewer, Islander, Navigator, Touch designer and Stereoscopist — to a final challenge, Console owner](images/quest/quest-map.svg)
 
-We start with words on the bottom screen, then put go-renderer's sample island on the top one,
-turn it with the circle pad, add a go-ui panel to touch below, switch on the real 3D, and finally
+We start with words on the bottom screen, then put Go Renderer's sample island on the top one,
+turn it with the circle pad, add a Go UI panel to touch below, switch on the real 3D, and finally
 copy it to an SD card.
 
 ---
@@ -26,8 +26,8 @@ You need:
 | **devkitPro's 3DS packages** | The console's libraries: libctru, citro3d, 3dstools | devkitARM in `/opt/devkitpro` ([devkitpro.org](https://devkitpro.org/wiki/Getting_Started)) |
 | **An emulator** (optional) | To try a program without the console | [Azahar](https://azahar-emu.org) |
 
-Clone go-3ds and make a module for the quest beside it. go-3ds's `go.mod` pins the versions of
-go-renderer and go-ui that draw on the console; copy its `replace` line:
+Clone Go for 3DS and make a module for the quest beside it. Go for 3DS's `go.mod` pins the versions of
+Go Renderer and Go UI that draw on the console; copy its `replace` line:
 
 ```sh
 git clone https://github.com/akrck02/go-3ds
@@ -112,7 +112,7 @@ func main() {
 }
 ```
 
-`ctr.Open` starts the graphics: always first. `app.Run` reads the controls into go-renderer's
+`ctr.Open` starts the graphics: always first. `app.Run` reads the controls into Go Renderer's
 `input.State`, the same as on a desktop: **A** is Enter, **B** is Escape, the cross is the arrows.
 
 #### Checkpoint
@@ -151,7 +151,7 @@ On the console it counts real seconds: sixty frames each.
 
 #### The idea
 
-go-renderer describes a scene the same way everywhere; only the **painter** changes. On the
+Go Renderer describes a scene the same way everywhere; only the **painter** changes. On the
 desktop it is OpenGL or Metal; on the 3DS it is citro3d, the console's own, through `ctr`. The
 scene, the camera and the sample island are the same as on a computer.
 
@@ -208,7 +208,7 @@ The island in the middle of the sea, with its forest and village, under a hazy s
 
 ![Achievement unlocked: Islander](images/quest/achievement-islander.svg)
 
-Learn more: [go-renderer on the 3DS](https://github.com/akrck02/go-renderer/blob/feature/3ds/docs/3ds.md)
+Learn more: [Go Renderer on the 3DS](https://github.com/akrck02/go-renderer/blob/feature/3ds/docs/3ds.md)
 
 ---
 
@@ -302,12 +302,12 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 
 | Mission | Pieces | Time |
 |---|---|---|
-| A go-ui panel on the touch screen: the time of day | `bottom.New`, `Paint`, both screens in one frame | 10 min |
+| A Go UI panel on the touch screen: the time of day | `bottom.New`, `Paint`, both screens in one frame | 10 min |
 
 #### The idea
 
 The bottom screen is a **touch screen**, so it is the pointer: a finger or the stylus presses
-go-ui's buttons and drags its sliders exactly as a mouse would. `bottom` lays a go-ui interface out
+Go UI's buttons and drags its sliders exactly as a mouse would. `bottom` lays a Go UI interface out
 there in a theme made for fingers, in the sea's colours.
 
 Both screens are drawn in **one frame**: between `ctr.BeginFrame` and `ctr.EndFrame`, the island
@@ -432,7 +432,7 @@ if context.Toggle("Fog", &amp;fog) {
 
 ![Achievement unlocked: Touch designer](images/quest/achievement-touch-designer.svg)
 
-Learn more: [go-ui on the 3DS](https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md)
+Learn more: [Go UI on the 3DS](https://github.com/akrck02/go-ui/blob/feature/3ds/docs/3ds.md)
 
 ---
 
@@ -491,7 +491,7 @@ and share it with the notices it must carry.
 2. Copy `island.3dsx` to `/3ds/` on the SD card (or send it over Wi-Fi with `3dslink`, from
    devkitPro's 3dstools, while the Launcher waits with **Y**).
 3. Open the Homebrew Launcher and choose it.
-4. To share it, put go-3ds's [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) next to it.
+4. To share it, put Go for 3DS's [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) next to it.
 
 On a New 3DS XL the island runs at 60 frames a second, in 3D with the slider.
 
@@ -514,8 +514,8 @@ your finger, and real 3D.
 |---|---|---|
 | Fly to places on the island | ⭐ | `cmd/explorer` eases the camera to a point chosen on its panel |
 | A map of the island on the panel | ⭐⭐ | `cmd/explorer`'s `islandMap`: a `draw2d.Image` drawn from `world.GroundHeight` |
-| A go-ui application, unchanged | ⭐⭐ | go-ui's `window.Run` on its `feature/3ds` branch puts the scene above and the interface below |
-| Sound | ⭐⭐ | [go-sound](https://github.com/akrck02/go-sound) plays through the DSP; it needs `/3ds/dspfirm.cdc` |
+| A Go UI application, unchanged | ⭐⭐ | Go UI's `window.Run` on its `feature/3ds` branch puts the scene above and the interface below |
+| Sound | ⭐⭐ | [Go Sound](https://github.com/akrck02/go-sound) plays through the DSP; it needs `/3ds/dspfirm.cdc` |
 
 ## Troubleshooting
 
@@ -524,7 +524,7 @@ your finger, and real 3D.
 | *An exception occurred … Undefined Instruction*, PC 0 | Something of `ctr` was used before `ctr.Open`, such as `OpenBottomConsole`: open first |
 | *Exception Type: Break* when drawing both screens | `Draw` begins and ends its own frame: inside `BeginFrame` … `EndFrame`, use `PaintStereo` |
 | `build constraints exclude all Go files` with `go build` | These programs are for TinyGo's `nintendo3ds` target only |
-| Works in the emulator, stops on the console | The emulator forgives reads of unmapped memory: run it with go-3ds's `tools/run-in-azahar.sh`, which warns of them |
+| Works in the emulator, stops on the console | The emulator forgives reads of unmapped memory: run it with Go for 3DS's `tools/run-in-azahar.sh`, which warns of them |
 | A drag on the panel stutters | Work done every frame on the processor: do it when the finger leaves (`!frame.Input.Button(input.MouseLeft)`) |
 
 ---

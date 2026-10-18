@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: akrck02/papiro-deploy@main
         with:
-          title: "go-3ds"
+          title: "Go for 3DS"
           description: "Go programs on the Nintendo 3DS"
           logo: "./docs/images/logo.svg"
           accent: "#3C8DDE"

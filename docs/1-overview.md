@@ -1,12 +1,12 @@
 <p align="center"><img alt="" src="images/logo.svg" width="120"></p>
 
-# Welcome to go-3ds 👋
+# Welcome to Go for 3DS 👋
 
-**go-3ds runs Go programs on the Nintendo 3DS**: a 3D island on the top screen, buttons and sliders you touch on the bottom one, and real 3D with the slider.
+**Go for 3DS runs Go programs on the Nintendo 3DS**: a 3D island on the top screen, buttons and sliders you touch on the bottom one, and real 3D with the slider.
 
 <p align="center"><img alt="The 3DS's two screens: an island in the evening above, a panel with the time of day below" src="images/explorer-evening.png" width="320"></p>
 
-It is the console's side of the family: the program's loop, the buttons and the touch screen, and a go-ui interface on the bottom screen. go-renderer draws on the console through its own graphics chip. Programs are built with a special version of TinyGo and opened from the Homebrew Launcher.
+It is the console's side of the family: the program's loop, the buttons and the touch screen, and a Go UI interface on the bottom screen. Go Renderer draws on the console through its own graphics chip. Programs are built with a special version of TinyGo and opened from the Homebrew Launcher.
 
 ## Is it for me?
 
@@ -50,21 +50,21 @@ See [what is where](3-what-is-where.md#not-yet).
 
 ## The family
 
-go-3ds is one of a family of small projects that work together:
+Go for 3DS is one of a family of small projects that work together:
 
 | Project | What it does |
 |---|---|
-| [go-renderer](https://github.com/akrck02/go-renderer) | draws 3D scenes and flat interfaces |
-| [go-ui](https://github.com/akrck02/go-ui) | buttons, panels and whole applications |
-| [go-ui-android](https://github.com/akrck02/go-ui-android) | Android apps that look like Android's own |
-| [go-sound](https://github.com/akrck02/go-sound) | sound and music |
-| [go-scene-builder](https://github.com/akrck02/go-scene-builder) | 3D scenes from a flat map |
-| [go-simulator](https://github.com/akrck02/go-simulator) | simulations that change a scene |
-| [go-simulator-terrain](https://github.com/akrck02/go-simulator-terrain) | ground shaped by rivers |
-| [go-simulator-climate](https://github.com/akrck02/go-simulator-climate) | weather and biomes |
-| [go-simulator-flora](https://github.com/akrck02/go-simulator-flora) | forests that grow |
-| [go-simulator-urban](https://github.com/akrck02/go-simulator-urban) | towns that grow |
-| [go-simulator-motion](https://github.com/akrck02/go-simulator-motion) | a scene that moves |
-| **go-3ds** (this one) | Go on the Nintendo 3DS |
+| [Go Renderer](https://github.com/akrck02/go-renderer) | draws 3D scenes and flat interfaces |
+| [Go UI](https://github.com/akrck02/go-ui) | buttons, panels and whole applications |
+| [Go UI for Android](https://github.com/akrck02/go-ui-android) | Android apps that look like Android's own |
+| [Go Sound](https://github.com/akrck02/go-sound) | sound and music |
+| [Go Scene Builder](https://github.com/akrck02/go-scene-builder) | 3D scenes from a flat map |
+| [Go Simulator](https://github.com/akrck02/go-simulator) | simulations that change a scene |
+| [Go Terrain Simulator](https://github.com/akrck02/go-simulator-terrain) | ground shaped by rivers |
+| [Go Climate Simulator](https://github.com/akrck02/go-simulator-climate) | weather and biomes |
+| [Go Flora Simulator](https://github.com/akrck02/go-simulator-flora) | forests that grow |
+| [Go Urban Simulator](https://github.com/akrck02/go-simulator-urban) | towns that grow |
+| [Go Motion Simulator](https://github.com/akrck02/go-simulator-motion) | a scene that moves |
+| **Go for 3DS** (this one) | Go on the Nintendo 3DS |
 
 > ⚠️ All of them are **educational experiments**, written with an AI assistant and pending review by their author: good for learning and playing, not for production.

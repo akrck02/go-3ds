@@ -1,17 +1,17 @@
 <p align="center"><img alt="" src="docs/images/logo.svg" width="120"></p>
 
-# go-3ds
+# Go for 3DS
 
 > **Note:** this project was written with an AI assistant and is pending thorough review. See the [AI disclosure](#ai-disclosure).
 
 Go programs on the **Nintendo 3DS**, as homebrew for the Homebrew Launcher. The drawing is
-[go-renderer](https://github.com/akrck02/go-renderer)'s (`ctr`, through citro3d); this repository
+[Go Renderer](https://github.com/akrck02/go-renderer)'s (`ctr`, through citro3d); this repository
 holds the rest of the platform: the program loop, a
-[go-ui](https://github.com/akrck02/go-ui) interface on the bottom screen, and an explorer of the
+[Go UI](https://github.com/akrck02/go-ui) interface on the bottom screen, and an explorer of the
 sample island.
 
 <p align="center">
-  <img alt="The 3DS's two screens in the emulator: the sample island's village above, a go-ui panel with the time of day below" src="docs/images/explorer-evening.png" width="320">
+  <img alt="The 3DS's two screens in the emulator: the sample island's village above, a Go UI panel with the time of day below" src="docs/images/explorer-evening.png" width="320">
 </p>
 
 ```bash

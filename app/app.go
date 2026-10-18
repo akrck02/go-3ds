@@ -26,12 +26,23 @@ import (
 type Frame struct {
 	Input   *input.State // keys, pointer and touches, as on the desktop
 	Reading ctr.Reading  // the hardware itself, for the circle pad
+	Pressed ctr.Buttons  // the buttons pressed this frame, not held since before
 	Seconds float64      // since the previous frame
 }
 
 // Run calls step once a frame, as fast as the screen shows frames (citro3d waits for it), until
 // step returns false, START is pressed or the system asks the program to close.
 func Run(step func(frame Frame) bool) {
+	run(step, true)
+}
+
+// RunWithStart is Run for a program that gives START a use of its own (a pause menu): only step
+// returning false, or the system, ends it.
+func RunWithStart(step func(frame Frame) bool) {
+	run(step, false)
+}
+
+func run(step func(frame Frame) bool, startLeaves bool) {
 	C.fastCPU()
 	state := input.NewState()
 	state.FramebufferWidth, state.FramebufferHeight = ctr.BottomWidth, ctr.BottomHeight
@@ -40,14 +51,15 @@ func Run(step func(frame Frame) bool) {
 	last := time.Now()
 	for ctr.Running() {
 		reading := ctr.ReadControls()
-		if reader.Pressed(reading)&ctr.ButtonStart != 0 {
+		pressed := reader.Pressed(reading)
+		if startLeaves && pressed&ctr.ButtonStart != 0 {
 			return
 		}
 		reader.Apply(state, reading)
 		now := time.Now()
 		seconds := now.Sub(last).Seconds()
 		last = now
-		if !step(Frame{Input: state, Reading: reading, Seconds: seconds}) {
+		if !step(Frame{Input: state, Reading: reading, Pressed: pressed, Seconds: seconds}) {
 			return
 		}
 		state.EndFrame()

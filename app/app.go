@@ -19,6 +19,10 @@ static int startCStick(void) {
 	return R_SUCCEEDED(irrstInit());
 }
 
+static void stopCStick(void) {
+	irrstExit();
+}
+
 // readCStick reads the C-stick, after the controls were read this frame.
 static void readCStick(int *x, int *y) {
 	irrstScanInput();
@@ -46,7 +50,7 @@ type Frame struct {
 	// CStickX and CStickY are the New 3DS's C-stick, from -1 to 1 (up positive), 0 inside its dead
 	// zone and on an original 3DS.
 	CStickX, CStickY float64
-	Seconds float64      // since the previous frame
+	Seconds          float64 // since the previous frame
 }
 
 // Run calls step once a frame, as fast as the screen shows frames (citro3d waits for it), until
@@ -68,6 +72,9 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 	state.WindowWidth, state.WindowHeight = ctr.BottomWidth, ctr.BottomHeight // the touch screen, where the pointer is
 	var reader ctr.Controls
 	cStick := C.startCStick() != 0
+	if cStick {
+		defer C.stopCStick()
+	}
 	last := time.Now()
 	for ctr.Running() {
 		reading := ctr.ReadControls()

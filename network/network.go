@@ -17,6 +17,7 @@ package network
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
+#include <poll.h>
 
 // The socket service needs a buffer of its own, aligned to a page; this is libctru's usual size.
 #define SOCKET_BUFFER_BYTES 0x100000
@@ -42,9 +43,10 @@ static void stopSockets(void) {
 	socketBuffer = NULL;
 }
 
-// openConnection connects to host:port and leaves the socket not blocking. It returns the socket,
-// -1 when the host is unknown and -2 when the connection fails.
-static int openConnection(const char *host, int port) {
+// openConnection connects to host:port within timeoutMs and leaves the socket not blocking. It
+// returns the socket, -1 when the host is unknown and -2 when the connection fails or takes too
+// long.
+static int openConnection(const char *host, int port, int timeoutMs) {
 	struct hostent *entry = gethostbyname(host);
 	if (!entry || !entry->h_addr_list[0]) return -1;
 	struct sockaddr_in address;
@@ -54,13 +56,20 @@ static int openConnection(const char *host, int port) {
 	memcpy(&address.sin_addr, entry->h_addr_list[0], sizeof address.sin_addr);
 	int handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle < 0) return -2;
+	fcntl(handle, F_SETFL, fcntl(handle, F_GETFL, 0) | O_NONBLOCK);
 	if (connect(handle, (struct sockaddr *)&address, sizeof address) < 0) {
-		close(handle);
-		return -2;
+		if (errno != EINPROGRESS) { close(handle); return -2; }
+		struct pollfd waiting = { .fd = handle, .events = POLLOUT };
+		int problem = 0;
+		socklen_t size = sizeof problem;
+		if (poll(&waiting, 1, timeoutMs) != 1 ||
+			getsockopt(handle, SOL_SOCKET, SO_ERROR, &problem, &size) < 0 || problem != 0) {
+			close(handle);
+			return -2;
+		}
 	}
 	int on = 1;
 	setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, &on, sizeof on);
-	fcntl(handle, F_SETFL, fcntl(handle, F_GETFL, 0) | O_NONBLOCK);
 	return handle;
 }
 
@@ -74,13 +83,19 @@ static int receiveSome(int handle, void *into, int size) {
 	return -2;
 }
 
-// sendAll writes every byte, waiting while the system's buffer is full. 0 when done, -1 if not.
-static int sendAll(int handle, const void *bytes, int size) {
+// sendAll writes every byte, waiting at most timeoutMs in all while the system's buffer is full,
+// so a peer that stopped reading can't freeze the program. 0 when done, -1 if not.
+static int sendAll(int handle, const void *bytes, int size, int timeoutMs) {
 	const char *next = bytes;
+	int waitedMs = 0;
 	while (size > 0) {
 		int count = send(handle, next, size, 0);
 		if (count < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) { svcSleepThread(1000000); continue; }
+			if ((errno == EAGAIN || errno == EWOULDBLOCK) && waitedMs < timeoutMs) {
+				svcSleepThread(1000000); // a millisecond
+				waitedMs++;
+				continue;
+			}
 			return -1;
 		}
 		next += count;
@@ -108,6 +123,13 @@ func Start() error {
 // Stop turns the socket service off. Connections still open stop working.
 func Stop() { C.stopSockets() }
 
+// How long Dial waits for the other end, and Write for room to send, in milliseconds. A frame is
+// about 17 ms: a send that waits longer than this gives up instead of freezing the program.
+const (
+	connectTimeoutMilliseconds = 5000
+	sendTimeoutMilliseconds    = 200
+)
+
 // Connection is an open TCP connection.
 type Connection struct {
 	handle C.int
@@ -115,14 +137,14 @@ type Connection struct {
 }
 
 // Dial connects to a host (a name or an address such as 192.168.1.20) on a port. It waits until
-// the connection is made or refused.
+// the connection is made or refused, five seconds at most.
 func Dial(host string, port int) (*Connection, error) {
 	if err := Start(); err != nil {
 		return nil, err
 	}
 	name := C.CString(host)
 	defer C.free(unsafe.Pointer(name))
-	handle := C.openConnection(name, C.int(port))
+	handle := C.openConnection(name, C.int(port), connectTimeoutMilliseconds)
 	if handle == -1 {
 		return nil, fmt.Errorf("%w: %s", ErrHostUnknown, host)
 	}
@@ -153,7 +175,8 @@ func (connection *Connection) Read(buffer []byte) (int, error) {
 	}
 }
 
-// Write sends every byte of bytes, waiting while the system's buffer is full.
+// Write sends every byte of bytes, waiting while the system's buffer is full, and fails with
+// ErrSend if it stays full for a fifth of a second.
 func (connection *Connection) Write(bytes []byte) (int, error) {
 	if connection.closed {
 		return 0, ErrClosed
@@ -161,7 +184,7 @@ func (connection *Connection) Write(bytes []byte) (int, error) {
 	if len(bytes) == 0 {
 		return 0, nil
 	}
-	if C.sendAll(connection.handle, unsafe.Pointer(&bytes[0]), C.int(len(bytes))) != 0 {
+	if C.sendAll(connection.handle, unsafe.Pointer(&bytes[0]), C.int(len(bytes)), sendTimeoutMilliseconds) != 0 {
 		return 0, ErrSend
 	}
 	return len(bytes), nil

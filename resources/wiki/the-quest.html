@@ -33,13 +33,13 @@ code</strong>, a <strong>checkpoint</strong> to know it works, and an optional <
 <tr>
 <td><strong>TinyGo with the <code>nintendo3ds</code> target</strong></td>
 <td>Go does not build for the 3DS; this fork of TinyGo does</td>
-<td><a href="https://github.com/akrck02/tinygo-3ds" target="_blank">tinygo-3ds</a>, branch <code>feature/3ds</code>, built against a system LLVM (its <code>NINTENDO3DS.md</code>)</td>
+<td><a href="https://github.com/akrck02/tinygo-3ds" target="_blank">tinygo-3ds</a>&rsquo;s releases (<code>v0.42.0-3ds.1</code>: LLVM inside, nothing else to install), or built from its <code>main</code> (its <code>NINTENDO3DS.md</code>)</td>
 </tr>
 
 <tr>
 <td><strong>devkitPro&rsquo;s 3DS packages</strong></td>
 <td>The console&rsquo;s libraries: libctru, citro3d, 3dstools</td>
-<td>devkitARM in <code>/opt/devkitpro</code> (<a href="https://devkitpro.org/wiki/Getting_Started" target="_blank">devkitpro.org</a>)</td>
+<td><code>dkp-pacman -S 3ds-dev</code> (<a href="https://devkitpro.org/wiki/Getting_Started" target="_blank">devkitpro.org</a>); tinygo-3ds finds it in <code>$DEVKITPRO</code>, or <code>/opt/devkitpro</code></td>
 </tr>
 
 <tr>
@@ -49,13 +49,11 @@ code</strong>, a <strong>checkpoint</strong> to know it works, and an optional <
 </tr>
 </tbody>
 </table>
-<p>Clone Go for 3DS and make a module for the quest beside it. Go for 3DS&rsquo;s <code>go.mod</code> pins the versions of
-Go Renderer and Go UI that draw on the console; copy its <code>replace</code> line:</p>
-<pre><code class="language-sh">git clone https://github.com/akrck02/go-3ds
-mkdir homebrew <span class="o">&amp;&amp;</span> <span class="nb">cd</span> homebrew
+<p>Make a module for the quest and ask for Go for 3DS, which brings the versions of Go Renderer and
+Go UI that draw on the console with it:</p>
+<pre><code class="language-sh">mkdir homebrew <span class="o">&amp;&amp;</span> <span class="nb">cd</span> homebrew
 go mod init example.com/homebrew
-go mod edit -require github.com/akrck02/go-3ds@v0.0.0 -replace github.com/akrck02/go-3ds<span class="o">=</span>../go-3ds
-grep <span class="s1">&#39;^replace github.com/akrck02/go-renderer&#39;</span> ../go-3ds/go.mod &gt;&gt; go.mod
+go get github.com/akrck02/go-3ds@latest
 </code></pre>
 
 <p>Build any level, and open it:</p>

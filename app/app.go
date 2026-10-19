@@ -19,6 +19,28 @@ static int startCStick(void) {
 	return R_SUCCEEDED(irrstInit());
 }
 
+// startGyroscope turns the gyroscope on and returns how many degrees a second one of its raw
+// steps is, or 0 when it can't be turned on.
+static float startGyroscope(void) {
+	float degreesPerStep = 0;
+	if (R_FAILED(HIDUSER_EnableGyroscope())) return 0;
+	if (R_FAILED(HIDUSER_GetGyroscopeRawToDpsCoefficient(&degreesPerStep))) return 0;
+	return degreesPerStep;
+}
+
+static void stopGyroscope(void) {
+	HIDUSER_DisableGyroscope();
+}
+
+// readGyroscope reads the turn rates, raw: roll, pitch and yaw as libctru names them.
+static void readGyroscope(int *roll, int *pitch, int *yaw) {
+	angularRate rate;
+	hidGyroRead(&rate);
+	*roll = rate.x;
+	*pitch = rate.y;
+	*yaw = rate.z;
+}
+
 static void stopCStick(void) {
 	irrstExit();
 }
@@ -50,7 +72,10 @@ type Frame struct {
 	// CStickX and CStickY are the New 3DS's C-stick, from -1 to 1 (up positive), 0 inside its dead
 	// zone and on an original 3DS.
 	CStickX, CStickY float64
-	Seconds          float64 // since the previous frame
+	// Gyroscope is how fast the console turns, in degrees a second, on the axes libctru names roll,
+	// pitch and yaw; all 0 when the gyroscope couldn't be turned on.
+	Gyroscope Gyroscope
+	Seconds   float64 // since the previous frame
 }
 
 // Run calls step once a frame, as fast as the screen shows frames (citro3d waits for it), until
@@ -75,6 +100,10 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 	if cStick {
 		defer C.stopCStick()
 	}
+	degreesPerStep := float64(C.startGyroscope())
+	if degreesPerStep != 0 {
+		defer C.stopGyroscope()
+	}
 	last := time.Now()
 	for ctr.Running() {
 		reading := ctr.ReadControls()
@@ -89,6 +118,9 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 		frame := Frame{Input: state, Reading: reading, Pressed: pressed, Seconds: seconds}
 		if cStick {
 			frame.CStickX, frame.CStickY = readCStick()
+		}
+		if degreesPerStep != 0 {
+			frame.Gyroscope = readGyroscope(degreesPerStep)
 		}
 		if !step(frame) {
 			return
@@ -112,4 +144,15 @@ func readCStick() (x, y float64) {
 		return 0, 0
 	}
 	return math.Max(-1, math.Min(1, x)), math.Max(-1, math.Min(1, y))
+}
+
+// Gyroscope is the console's turn rates, in degrees a second.
+type Gyroscope struct {
+	Roll, Pitch, Yaw float64
+}
+
+func readGyroscope(degreesPerStep float64) Gyroscope {
+	var roll, pitch, yaw C.int
+	C.readGyroscope(&roll, &pitch, &yaw)
+	return Gyroscope{Roll: float64(roll) * degreesPerStep, Pitch: float64(pitch) * degreesPerStep, Yaw: float64(yaw) * degreesPerStep}
 }

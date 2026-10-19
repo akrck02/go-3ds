@@ -11,7 +11,7 @@ Programs built for the Nintendo 3DS link the following software into the `.3dsx`
 | libctru | The 3DS system library, linked statically | zlib |
 | citro3d | The 3DS GPU library, linked statically | zlib |
 | newlib | The C library of devkitARM, linked statically | several BSD-style licenses, one per source file |
-| Mbed TLS | TLS for `network.DialSecure`, from devkitPro's portlibs (2.28), linked statically | Apache-2.0 |
+| Mbed TLS | TLS for `network.DialSecure`, from devkitPro's portlibs (2.28), linked statically | Apache-2.0 (offered as Apache-2.0 or GPL-2.0-or-later; used here under Apache-2.0) |
 | ISRG Root X1 and X2 | Let's Encrypt's root certificates, embedded in `network` | public certificates, no license terms |
 | go-renderer | github.com/akrck02/go-renderer | MIT |
 | go-ui | github.com/akrck02/go-ui | MIT |

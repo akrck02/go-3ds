@@ -114,20 +114,13 @@ static int readSecure(secureConnection *secure, unsigned char *into, int size) {
 	return -2;
 }
 
-// writeSecure writes every byte, waiting at most timeoutMs in all. 0 when done, -1 if not.
-static int writeSecure(secureConnection *secure, const unsigned char *bytes, int size, int timeoutMs) {
-	int waitedMs = 0;
-	while (size > 0) {
-		int count = mbedtls_ssl_write(&secure->ssl, bytes, size);
-		if (count > 0) { bytes += count; size -= count; continue; }
-		if ((count == MBEDTLS_ERR_SSL_WANT_READ || count == MBEDTLS_ERR_SSL_WANT_WRITE) && waitedMs < timeoutMs) {
-			svcSleepThread(1000000);
-			waitedMs++;
-			continue;
-		}
-		return -1;
-	}
-	return 0;
+// writeSecure sends what TLS takes now: the bytes taken, 0 when it can't now (call it again
+// later with the same bytes, as mbedtls asks), or mbedtls's error, negative.
+static int writeSecure(secureConnection *secure, const unsigned char *bytes, int size) {
+	int count = mbedtls_ssl_write(&secure->ssl, bytes, size);
+	if (count >= 0) return count;
+	if (count == MBEDTLS_ERR_SSL_WANT_READ || count == MBEDTLS_ERR_SSL_WANT_WRITE) return 0;
+	return count;
 }
 
 // closeSecure says goodbye to the server, as TLS asks, and lets the connection go.
@@ -191,8 +184,8 @@ func readSecure(secure unsafe.Pointer, buffer []byte) int {
 	return int(C.readSecure((*C.secureConnection)(secure), (*C.uchar)(unsafe.Pointer(&buffer[0])), C.int(len(buffer))))
 }
 
-func writeSecure(secure unsafe.Pointer, bytes []byte) bool {
-	return C.writeSecure((*C.secureConnection)(secure), (*C.uchar)(unsafe.Pointer(&bytes[0])), C.int(len(bytes)), sendTimeoutMilliseconds) == 0
+func writeSecure(secure unsafe.Pointer, bytes []byte) int {
+	return int(C.writeSecure((*C.secureConnection)(secure), (*C.uchar)(unsafe.Pointer(&bytes[0])), C.int(len(bytes))))
 }
 
 func closeSecure(secure unsafe.Pointer) {

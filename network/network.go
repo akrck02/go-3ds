@@ -222,15 +222,17 @@ func (connection *Connection) Write(bytes []byte) (int, error) {
 	return len(bytes), nil
 }
 
-// Close closes the connection.
+// Close closes the connection, also after the other end has closed it: the socket and, for a
+// secure connection, TLS's memory are let go either way.
 func (connection *Connection) Close() error {
-	if !connection.closed {
-		connection.closed = true
-		if connection.secure != nil {
-			closeSecure(connection.secure)
-			connection.secure = nil
-		}
+	connection.closed = true
+	if connection.secure != nil {
+		closeSecure(connection.secure)
+		connection.secure = nil
+	}
+	if connection.handle >= 0 {
 		C.close(connection.handle)
+		connection.handle = -1
 	}
 	return nil
 }

@@ -58,6 +58,7 @@ import "C"
 
 import (
 	"math"
+	"runtime"
 	"time"
 
 	"github.com/akrck02/go-renderer/ctr"
@@ -126,6 +127,11 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 			return
 		}
 		state.EndFrame()
+		// Let the program's other goroutines run once a frame: TinyGo's scheduler switches only
+		// when one yields, and this loop otherwise waits for the screen inside C without
+		// yielding, so a goroutine that sleeps between jobs (go-sound feeding the DSP, every few
+		// milliseconds) would never wake: the sound stopped once its first buffers were played.
+		runtime.Gosched()
 	}
 }
 

@@ -10,4 +10,6 @@ var (
 	ErrSend        = errors.New("network.send-failed")
 	ErrReceive     = errors.New("network.receive-failed")
 	ErrClosed      = errors.New("network.closed")
+	ErrSecure      = errors.New("network.secure-failed")
+	ErrCertificate = errors.New("network.certificate-refused")
 )

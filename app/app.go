@@ -19,13 +19,13 @@ static int startCStick(void) {
 	return R_SUCCEEDED(irrstInit());
 }
 
-// startGyroscope turns the gyroscope on and returns how many degrees a second one of its raw
-// steps is, or 0 when it can't be turned on.
+// startGyroscope turns the gyroscope on and returns how many of its raw steps make a degree a
+// second (about 14 on a New 3DS), or 0 when it can't be turned on.
 static float startGyroscope(void) {
-	float degreesPerStep = 0;
+	float stepsPerDegree = 0;
 	if (R_FAILED(HIDUSER_EnableGyroscope())) return 0;
-	if (R_FAILED(HIDUSER_GetGyroscopeRawToDpsCoefficient(&degreesPerStep))) return 0;
-	return degreesPerStep;
+	if (R_FAILED(HIDUSER_GetGyroscopeRawToDpsCoefficient(&stepsPerDegree))) return 0;
+	return stepsPerDegree;
 }
 
 static void stopGyroscope(void) {
@@ -100,8 +100,8 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 	if cStick {
 		defer C.stopCStick()
 	}
-	degreesPerStep := float64(C.startGyroscope())
-	if degreesPerStep != 0 {
+	stepsPerDegree := float64(C.startGyroscope())
+	if stepsPerDegree != 0 {
 		defer C.stopGyroscope()
 	}
 	last := time.Now()
@@ -119,8 +119,8 @@ func run(step func(frame Frame) bool, startLeaves bool) {
 		if cStick {
 			frame.CStickX, frame.CStickY = readCStick()
 		}
-		if degreesPerStep != 0 {
-			frame.Gyroscope = readGyroscope(degreesPerStep)
+		if stepsPerDegree != 0 {
+			frame.Gyroscope = readGyroscope(stepsPerDegree)
 		}
 		if !step(frame) {
 			return
@@ -151,8 +151,10 @@ type Gyroscope struct {
 	Roll, Pitch, Yaw float64
 }
 
-func readGyroscope(degreesPerStep float64) Gyroscope {
+// readGyroscope reads the rates in degrees a second: libctru's coefficient divides the raw steps
+// (multiplying by it read a slight turn as thousands of degrees a second).
+func readGyroscope(stepsPerDegree float64) Gyroscope {
 	var roll, pitch, yaw C.int
 	C.readGyroscope(&roll, &pitch, &yaw)
-	return Gyroscope{Roll: float64(roll) * degreesPerStep, Pitch: float64(pitch) * degreesPerStep, Yaw: float64(yaw) * degreesPerStep}
+	return Gyroscope{Roll: float64(roll) / stepsPerDegree, Pitch: float64(pitch) / stepsPerDegree, Yaw: float64(yaw) / stepsPerDegree}
 }

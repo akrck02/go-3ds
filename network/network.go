@@ -17,7 +17,6 @@ package network
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
-#include <poll.h>
 
 // The socket service needs a buffer of its own, aligned to a page; this is libctru's usual size.
 #define SOCKET_BUFFER_BYTES 0x100000
@@ -45,8 +44,9 @@ static void stopSockets(void) {
 
 // openConnection connects to host:port within timeoutMs and leaves the socket not blocking. It
 // returns the socket, -1 when the host is unknown and -2 when the connection fails or takes too
-// long.
-static int openConnection(const char *host, int port, int timeoutMs) {
+// long; then *stage says where (1 socket, 2 connect, 3 waiting, 4 refused) and *problem the
+// system's error number.
+static int openConnection(const char *host, int port, int timeoutMs, int *stage, int *problem) {
 	struct hostent *entry = gethostbyname(host);
 	if (!entry || !entry->h_addr_list[0]) return -1;
 	struct sockaddr_in address;
@@ -55,17 +55,33 @@ static int openConnection(const char *host, int port, int timeoutMs) {
 	address.sin_port = htons(port);
 	memcpy(&address.sin_addr, entry->h_addr_list[0], sizeof address.sin_addr);
 	int handle = socket(AF_INET, SOCK_STREAM, 0);
-	if (handle < 0) return -2;
+	if (handle < 0) { *stage = 1; *problem = errno; return -2; }
 	fcntl(handle, F_SETFL, fcntl(handle, F_GETFL, 0) | O_NONBLOCK);
 	if (connect(handle, (struct sockaddr *)&address, sizeof address) < 0) {
-		if (errno != EINPROGRESS) { close(handle); return -2; }
-		struct pollfd waiting = { .fd = handle, .events = POLLOUT };
-		int problem = 0;
-		socklen_t size = sizeof problem;
-		if (poll(&waiting, 1, timeoutMs) != 1 ||
-			getsockopt(handle, SOL_SOCKET, SO_ERROR, &problem, &size) < 0 || problem != 0) {
+		if (errno == EINPROGRESS || errno == EALREADY || errno == EWOULDBLOCK) {
+			// The 3DS says the socket is ready before the connection is made, and its SO_ERROR
+			// is the system's own number: ask connect again until it says connected.
+			int waitedMs = 0;
+			for (;;) {
+				if (connect(handle, (struct sockaddr *)&address, sizeof address) == 0 || errno == EISCONN) break;
+				if (errno != EINPROGRESS && errno != EALREADY && errno != EWOULDBLOCK) {
+					*stage = 4; *problem = errno; close(handle); return -2;
+				}
+				if (waitedMs >= timeoutMs) { *stage = 3; *problem = ETIMEDOUT; close(handle); return -2; }
+				svcSleepThread(10000000); // ten milliseconds
+				waitedMs += 10;
+			}
+		} else {
+			// Some systems refuse a connect that doesn't block: try again the plain way, which
+			// waits as long as the system decides.
+			int first = errno;
 			close(handle);
-			return -2;
+			handle = socket(AF_INET, SOCK_STREAM, 0);
+			if (handle < 0) { *stage = 1; *problem = errno; return -2; }
+			if (connect(handle, (struct sockaddr *)&address, sizeof address) < 0) {
+				*stage = 2; *problem = errno ? errno : first; close(handle); return -2;
+			}
+			fcntl(handle, F_SETFL, fcntl(handle, F_GETFL, 0) | O_NONBLOCK);
 		}
 	}
 	int on = 1;
@@ -130,6 +146,9 @@ const (
 	sendTimeoutMilliseconds    = 200
 )
 
+// connectStages name where a connection failed, for the error's details.
+var connectStages = map[C.int]string{1: "opening a socket", 2: "connecting", 3: "waiting for an answer", 4: "refused"}
+
 // Connection is an open TCP connection.
 type Connection struct {
 	handle C.int
@@ -144,12 +163,13 @@ func Dial(host string, port int) (*Connection, error) {
 	}
 	name := C.CString(host)
 	defer C.free(unsafe.Pointer(name))
-	handle := C.openConnection(name, C.int(port), connectTimeoutMilliseconds)
+	var stage, problem C.int
+	handle := C.openConnection(name, C.int(port), connectTimeoutMilliseconds, &stage, &problem)
 	if handle == -1 {
 		return nil, fmt.Errorf("%w: %s", ErrHostUnknown, host)
 	}
 	if handle < 0 {
-		return nil, fmt.Errorf("%w: %s:%d", ErrConnect, host, port)
+		return nil, fmt.Errorf("%w: %s:%d (%s, error %d)", ErrConnect, host, port, connectStages[stage], int(problem))
 	}
 	return &Connection{handle: handle}, nil
 }

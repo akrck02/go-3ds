@@ -38,6 +38,14 @@ static int writeFile(const char *path, const char *temporary, const char *bytes,
 	return rename(temporary, path) == 0 ? 0 : -1;
 }
 
+// appendFile adds bytes at the end of a file, making it when missing. 0 when done.
+static int appendFile(const char *path, const char *bytes, long size) {
+	FILE *file = fopen(path, "ab");
+	if (!file) return -1;
+	long written = fwrite(bytes, 1, size, file);
+	return fclose(file) == 0 && written == size ? 0 : -1;
+}
+
 static int makeFolder(const char *path) {
 	return mkdir(path, 0777) == 0 || errno == EEXIST ? 0 : -1;
 }
@@ -98,4 +106,24 @@ func (folder Folder) Save(name string, data []byte) error {
 		return fmt.Errorf("%w: %s", ErrWrite, name)
 	}
 	return nil
+}
+
+// Append adds data at the end of a file of the folder, making it when missing: for a log.
+func (folder Folder) Append(name string, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
+	path := C.CString(folder.path + "/" + name)
+	defer C.free(unsafe.Pointer(path))
+	if C.appendFile(path, (*C.char)(unsafe.Pointer(&data[0])), C.long(len(data))) != 0 {
+		return fmt.Errorf("%w: %s", ErrWrite, name)
+	}
+	return nil
+}
+
+// Remove deletes a file of the folder, if it is there.
+func (folder Folder) Remove(name string) {
+	path := C.CString(folder.path + "/" + name)
+	defer C.free(unsafe.Pointer(path))
+	C.remove(path)
 }

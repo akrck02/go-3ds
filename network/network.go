@@ -99,31 +99,20 @@ static int receiveSome(int handle, void *into, int size) {
 	return -2;
 }
 
-// sendAll writes every byte, waiting at most timeoutMs in all while the system's buffer is full,
-// so a peer that stopped reading can't freeze the program. 0 when done, -1 if not.
-static int sendAll(int handle, const void *bytes, int size, int timeoutMs) {
-	const char *next = bytes;
-	int waitedMs = 0;
-	while (size > 0) {
-		int count = send(handle, next, size, 0);
-		if (count < 0) {
-			if ((errno == EAGAIN || errno == EWOULDBLOCK) && waitedMs < timeoutMs) {
-				svcSleepThread(1000000); // a millisecond
-				waitedMs++;
-				continue;
-			}
-			return -1;
-		}
-		next += count;
-		size -= count;
-	}
-	return 0;
+// sendSome sends what the system takes now, without waiting: the bytes sent, 0 when its buffer
+// is full, or the negative of the system's error number.
+static int sendSome(int handle, const void *bytes, int size) {
+	int count = send(handle, bytes, size, 0);
+	if (count >= 0) return count;
+	if (errno == EAGAIN || errno == EWOULDBLOCK) return 0;
+	return errno > 0 ? -errno : -1;
 }
 */
 import "C"
 
 import (
 	"fmt"
+	"time"
 	"unsafe"
 )
 
@@ -139,11 +128,15 @@ func Start() error {
 // Stop turns the socket service off. Connections still open stop working.
 func Stop() { C.stopSockets() }
 
-// How long Dial waits for the other end, and Write for room to send, in milliseconds. A frame is
-// about 17 ms: a send that waits longer than this gives up instead of freezing the program.
+// How long Dial waits for the other end, in milliseconds.
+const connectTimeoutMilliseconds = 5000
+
+// How long bytes may wait to be sent, and how many, before the connection counts as stuck: a
+// console's wifi can stall for a moment, which is not a reason to drop a game.
 const (
-	connectTimeoutMilliseconds = 5000
-	sendTimeoutMilliseconds    = 200
+	stuckSeconds        = 5
+	mostPendingBytes    = 512 << 10
+	flushAttemptsAFrame = 8 // sends tried each Flush while the system takes bytes
 )
 
 // connectStages name where a connection failed, for the error's details.
@@ -151,9 +144,12 @@ var connectStages = map[C.int]string{1: "opening a socket", 2: "connecting", 3: 
 
 // Connection is an open TCP connection.
 type Connection struct {
-	handle C.int
-	closed bool
-	secure unsafe.Pointer // set by DialSecure (secure.go): then reads and writes go through TLS
+	handle      C.int
+	closed      bool
+	pending     []byte         // written, not yet taken by the system
+	waitingFrom time.Time      // since when the oldest pending byte has waited
+	failure     error          // the send that failed, reported by the next Write or Flush
+	secure      unsafe.Pointer // set by DialSecure (secure.go): then reads and writes go through TLS
 }
 
 // Dial connects to a host (a name or an address such as 192.168.1.20) on a port. It waits until
@@ -201,25 +197,68 @@ func (connection *Connection) Read(buffer []byte) (int, error) {
 	}
 }
 
-// Write sends every byte of bytes, waiting while the system's buffer is full, and fails with
-// ErrSend if it stays full for a fifth of a second.
+// Write queues bytes and sends what the system takes now; the rest goes in later calls of Write
+// or Flush. It never waits. It fails with ErrSend when the system refused bytes, or when bytes
+// have waited stuckSeconds or more than mostPendingBytes wait (the other end stopped reading).
 func (connection *Connection) Write(bytes []byte) (int, error) {
 	if connection.closed {
 		return 0, ErrClosed
 	}
-	if len(bytes) == 0 {
-		return 0, nil
+	if len(connection.pending) == 0 {
+		connection.waitingFrom = time.Now()
 	}
-	if connection.secure != nil {
-		if !writeSecure(connection.secure, bytes) {
-			return 0, ErrSend
-		}
-		return len(bytes), nil
-	}
-	if C.sendAll(connection.handle, unsafe.Pointer(&bytes[0]), C.int(len(bytes)), sendTimeoutMilliseconds) != 0 {
-		return 0, ErrSend
+	connection.pending = append(connection.pending, bytes...)
+	if err := connection.Flush(); err != nil {
+		return 0, err
 	}
 	return len(bytes), nil
+}
+
+// Flush sends what the system takes now of what Write queued; call it once a frame.
+func (connection *Connection) Flush() error {
+	if connection.failure != nil {
+		return connection.failure
+	}
+	for attempt := 0; attempt < flushAttemptsAFrame && len(connection.pending) > 0; attempt++ {
+		count := connection.sendSome(connection.pending)
+		if count < 0 {
+			connection.failure = fmt.Errorf("%w: %s", ErrSend, connection.sendProblem(count))
+			return connection.failure
+		}
+		if count == 0 {
+			break // the system's buffer is full: the rest waits for the next frame
+		}
+		connection.pending = connection.pending[:copy(connection.pending, connection.pending[count:])]
+		connection.waitingFrom = time.Now()
+	}
+	if len(connection.pending) == 0 {
+		return nil
+	}
+	if waited := time.Since(connection.waitingFrom); waited > stuckSeconds*time.Second || len(connection.pending) > mostPendingBytes {
+		connection.failure = fmt.Errorf("%w: %d bytes waiting for %.1f s", ErrSend, len(connection.pending), waited.Seconds())
+	}
+	return connection.failure
+}
+
+// Pending is how many written bytes still wait to be sent: a game skips updates that a later one
+// replaces while the network is behind.
+func (connection *Connection) Pending() int { return len(connection.pending) }
+
+// sendSome sends the start of bytes, plain or through TLS: the bytes sent, 0 when nothing can be
+// sent now, or a negative error.
+func (connection *Connection) sendSome(bytes []byte) int {
+	if connection.secure != nil {
+		return writeSecure(connection.secure, bytes)
+	}
+	return int(C.sendSome(connection.handle, unsafe.Pointer(&bytes[0]), C.int(len(bytes))))
+}
+
+// sendProblem names a failed send's error: the system's number, or mbedtls's.
+func (connection *Connection) sendProblem(code int) string {
+	if connection.secure != nil {
+		return fmt.Sprintf("TLS error %#x", -code)
+	}
+	return fmt.Sprintf("system error %d", -code)
 }
 
 // Close closes the connection, also after the other end has closed it: the socket and, for a

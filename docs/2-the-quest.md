@@ -22,19 +22,17 @@ You need:
 
 | | Why | Where |
 |---|---|---|
-| **TinyGo with the `nintendo3ds` target** | Go does not build for the 3DS; this fork of TinyGo does | [tinygo-3ds](https://github.com/akrck02/tinygo-3ds), branch `feature/3ds`, built against a system LLVM (its `NINTENDO3DS.md`) |
-| **devkitPro's 3DS packages** | The console's libraries: libctru, citro3d, 3dstools | devkitARM in `/opt/devkitpro` ([devkitpro.org](https://devkitpro.org/wiki/Getting_Started)) |
+| **TinyGo with the `nintendo3ds` target** | Go does not build for the 3DS; this fork of TinyGo does | [tinygo-3ds](https://github.com/akrck02/tinygo-3ds)'s releases (`v0.42.0-3ds.1`: LLVM inside, nothing else to install), or built from its `main` (its `NINTENDO3DS.md`) |
+| **devkitPro's 3DS packages** | The console's libraries: libctru, citro3d, 3dstools | `dkp-pacman -S 3ds-dev` ([devkitpro.org](https://devkitpro.org/wiki/Getting_Started)); tinygo-3ds finds it in `$DEVKITPRO`, or `/opt/devkitpro` |
 | **An emulator** (optional) | To try a program without the console | [Azahar](https://azahar-emu.org) |
 
-Clone Go for 3DS and make a module for the quest beside it. Go for 3DS's `go.mod` pins the versions of
-Go Renderer and Go UI that draw on the console; copy its `replace` line:
+Make a module for the quest and ask for Go for 3DS, which brings the versions of Go Renderer and
+Go UI that draw on the console with it:
 
 ```sh
-git clone https://github.com/akrck02/go-3ds
 mkdir homebrew && cd homebrew
 go mod init example.com/homebrew
-go mod edit -require github.com/akrck02/go-3ds@v0.0.0 -replace github.com/akrck02/go-3ds=../go-3ds
-grep '^replace github.com/akrck02/go-renderer' ../go-3ds/go.mod >> go.mod
+go get github.com/akrck02/go-3ds@latest
 ```
 
 Build any level, and open it:

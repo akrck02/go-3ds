@@ -1,7 +1,7 @@
 github.com/akrck02/go-renderer v0.1.0 h1:XcuTMfi8P0+69nnNxjZZ+ytQ4DL1ulMiLZU3oHluXxw=
 github.com/akrck02/go-renderer v0.1.0/go.mod h1:Z835tJYTrI/B+rxk5BbIMsDFokk+P36R8kZ0CVbEZzA=
-github.com/akrck02/go-ui v0.1.1-0.20261019183617-49c092f96e21 h1:CISDLP7IHfw4IT+IgimEt4CN1J0Z/y93IrXWzbm6HE8=
-github.com/akrck02/go-ui v0.1.1-0.20261019183617-49c092f96e21/go.mod h1:O2qBdFyWLfJGvjf0tCGGdz9vgCnMuonNAjbRqXXWnLk=
+github.com/akrck02/go-ui v0.1.1 h1:0doyqtJqZqjOXo1qOjshAkR/hxPZYg7BBPq/rXlgEr0=
+github.com/akrck02/go-ui v0.1.1/go.mod h1:O2qBdFyWLfJGvjf0tCGGdz9vgCnMuonNAjbRqXXWnLk=
 golang.org/x/image v0.45.0 h1:FMb1nTbH5H9vF55SriQHgFw5GnNL9Jg6L25BwXKzhB0=
 golang.org/x/image v0.45.0/go.mod h1:n62x/7RqlwXDvGsSU4u6IUTUf6KghUZ9Bt7cG/T9Fx4=
 golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=

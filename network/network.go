@@ -153,6 +153,7 @@ var connectStages = map[C.int]string{1: "opening a socket", 2: "connecting", 3: 
 type Connection struct {
 	handle C.int
 	closed bool
+	secure unsafe.Pointer // set by DialSecure (secure.go): then reads and writes go through TLS
 }
 
 // Dial connects to a host (a name or an address such as 192.168.1.20) on a port. It waits until
@@ -183,7 +184,12 @@ func (connection *Connection) Read(buffer []byte) (int, error) {
 	if len(buffer) == 0 {
 		return 0, nil
 	}
-	count := C.receiveSome(connection.handle, unsafe.Pointer(&buffer[0]), C.int(len(buffer)))
+	var count C.int
+	if connection.secure != nil {
+		count = C.int(readSecure(connection.secure, buffer))
+	} else {
+		count = C.receiveSome(connection.handle, unsafe.Pointer(&buffer[0]), C.int(len(buffer)))
+	}
 	switch {
 	case count >= 0:
 		return int(count), nil
@@ -204,6 +210,12 @@ func (connection *Connection) Write(bytes []byte) (int, error) {
 	if len(bytes) == 0 {
 		return 0, nil
 	}
+	if connection.secure != nil {
+		if !writeSecure(connection.secure, bytes) {
+			return 0, ErrSend
+		}
+		return len(bytes), nil
+	}
 	if C.sendAll(connection.handle, unsafe.Pointer(&bytes[0]), C.int(len(bytes)), sendTimeoutMilliseconds) != 0 {
 		return 0, ErrSend
 	}
@@ -214,6 +226,10 @@ func (connection *Connection) Write(bytes []byte) (int, error) {
 func (connection *Connection) Close() error {
 	if !connection.closed {
 		connection.closed = true
+		if connection.secure != nil {
+			closeSecure(connection.secure)
+			connection.secure = nil
+		}
 		C.close(connection.handle)
 	}
 	return nil

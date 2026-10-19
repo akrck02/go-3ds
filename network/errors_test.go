@@ -10,6 +10,7 @@ func TestEveryErrorHasItsOwnCode(t *testing.T) {
 		ErrStart: "network.start-failed", ErrHostUnknown: "network.host-unknown",
 		ErrConnect: "network.connect-failed", ErrSend: "network.send-failed",
 		ErrReceive: "network.receive-failed", ErrClosed: "network.closed",
+		ErrSecure: "network.secure-failed", ErrCertificate: "network.certificate-refused",
 	}
 	for err, code := range codes {
 		if err.Error() != code {

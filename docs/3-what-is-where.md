@@ -8,7 +8,11 @@ The packages of Go for 3DS, the explorer it comes with, what you need to build f
 | Piece | What it does |
 |---|---|
 | `bottom` | A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer's `ctr.FlatRenderer` paints it, the touch screen is its pointer. `bottom.Theme` is Go UI's dark theme made for 320 × 240 pixels a finger touches, in the sea's colours. |
-| `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame (Go Renderer's `ctr.Controls`: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop. |
+| `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame (Go Renderer's `ctr.Controls`: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop. Each frame also carries the buttons pressed, the New 3DS's C-stick and the gyroscope; `RunWithStart` is for programs that give START a use of their own. The loop yields once a frame, so goroutines such as Go Sound's get their turn. |
+| `network` | TCP connections over the console's socket service that never make a frame wait: reads return what has arrived, writes queue and `Flush` sends what the system takes. `DialSecure` talks TLS 1.2 through devkitPro's mbedtls, trusting Let's Encrypt's roots. |
+| `storage` | A program's small files on the SD card, under `sdmc:/3ds/<name>/`: saved whole or not at all, appended to, removed. |
+| `keyboard` | The system's software keyboard, for text, numbers or a password; it takes both screens until it closes. |
+| `cmd/echo`, `cmd/secure-echo`, `cmd/storage-check` | Small checks on the console: a line sent to a TCP echo server and back, the same over TLS, and a file saved, read and removed on the SD card. |
 | `cmd/explorer` | The sample island on the top screen, in 3D with the slider, and a Go UI panel on the bottom one: places to fly to, the time of day and the fog, and how fast frames go. The circle pad or the cross turn the camera, L and R move it away and closer. |
 | `tools/run-in-azahar.sh` | Runs a `.3dsx` in the Azahar emulator without a screen (under Xvfb) and prints what the program wrote to the debug log; it also warns about reads and writes of unmapped memory, which stop a program on the console but not in the emulator. |
 

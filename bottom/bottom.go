@@ -14,6 +14,7 @@ import (
 // Interface is a go-ui context on the bottom screen.
 type Interface struct {
 	Context  *ui.Context
+	screen   *ctr.BottomScreen
 	renderer *ctr.FlatRenderer
 }
 
@@ -32,7 +33,7 @@ func New(theme ui.Theme) (*Interface, error) {
 		return nil, err
 	}
 	context.Theme = theme
-	return &Interface{Context: context, renderer: renderer}, nil
+	return &Interface{Context: context, screen: screen, renderer: renderer}, nil
 }
 
 // Paint builds the interface for this frame's input and paints it, between ctr.BeginFrame and
@@ -42,4 +43,17 @@ func (screen *Interface) Paint(state *input.State, build func(context *ui.Contex
 	build(screen.Context)
 	screen.Context.End()
 	screen.renderer.Paint(screen.Context.Drawing(), screen.Context.Theme.Background)
+}
+
+// Screen is the bottom screen, for drawing a scene on it (ctr.SceneRenderer's PaintOn) under the
+// interface painted with PaintOver.
+func (screen *Interface) Screen() *ctr.BottomScreen { return screen.screen }
+
+// PaintOver builds the interface and paints it over what the bottom screen shows already, without
+// clearing it: a scene drawn first with PaintOn shows through where the interface draws nothing.
+func (screen *Interface) PaintOver(state *input.State, build func(context *ui.Context)) {
+	screen.Context.Begin(state)
+	build(screen.Context)
+	screen.Context.End()
+	screen.renderer.PaintOver(screen.screen, screen.Context.Drawing())
 }

@@ -20,7 +20,27 @@
 
 <tr>
 <td><code>app</code></td>
-<td>The program loop: the New 3DS&rsquo;s fast clock, the controls into the input state every frame (Go Renderer&rsquo;s <code>ctr.Controls</code>: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop.</td>
+<td>The program loop: the New 3DS&rsquo;s fast clock, the controls into the input state every frame (Go Renderer&rsquo;s <code>ctr.Controls</code>: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop. Each frame also carries the buttons pressed, the New 3DS&rsquo;s C-stick and the gyroscope; <code>RunWithStart</code> is for programs that give START a use of their own. The loop yields once a frame, so goroutines such as Go Sound&rsquo;s get their turn.</td>
+</tr>
+
+<tr>
+<td><code>network</code></td>
+<td>TCP connections over the console&rsquo;s socket service that never make a frame wait: reads return what has arrived, writes queue and <code>Flush</code> sends what the system takes. <code>DialSecure</code> talks TLS 1.2 through devkitPro&rsquo;s mbedtls, trusting Let&rsquo;s Encrypt&rsquo;s roots.</td>
+</tr>
+
+<tr>
+<td><code>storage</code></td>
+<td>A program&rsquo;s small files on the SD card, under <code>sdmc:/3ds/&lt;name&gt;/</code>: saved whole or not at all, appended to, removed.</td>
+</tr>
+
+<tr>
+<td><code>keyboard</code></td>
+<td>The system&rsquo;s software keyboard, for text, numbers or a password; it takes both screens until it closes.</td>
+</tr>
+
+<tr>
+<td><code>cmd/echo</code>, <code>cmd/secure-echo</code>, <code>cmd/storage-check</code></td>
+<td>Small checks on the console: a line sent to a TCP echo server and back, the same over TLS, and a file saved, read and removed on the SD card.</td>
 </tr>
 
 <tr>

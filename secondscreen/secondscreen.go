@@ -1,9 +1,10 @@
 //go:build nintendo3ds
 
-// Package bottom shows a go-ui interface on the Nintendo 3DS's bottom screen: go-ui lays it out
-// as a draw2d list, and go-renderer's ctr.FlatRenderer paints it. The touch screen is the pointer
-// (go-renderer's ctr.Controls), so buttons, sliders and tabs answer the finger or the stylus.
-package bottom
+// Package secondscreen shows a go-ui interface on the second screen, the Nintendo 3DS's bottom
+// one: go-ui lays it out as a draw2d list, and go-renderer's ctr.FlatRenderer paints it. The touch
+// screen is the pointer (go-renderer's ctr.Controls), so buttons, sliders and tabs answer the
+// finger or the stylus.
+package secondscreen
 
 import (
 	"github.com/akrck02/go-renderer/ctr"
@@ -11,7 +12,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 )
 
-// Interface is a go-ui context on the bottom screen.
+// Interface is a go-ui context on the second screen.
 type Interface struct {
 	Context  *ui.Context
 	screen   *ctr.BottomScreen

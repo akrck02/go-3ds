@@ -12,7 +12,7 @@ import (
 	"math"
 
 	"github.com/akrck02/go-3ds/app"
-	"github.com/akrck02/go-3ds/bottom"
+	"github.com/akrck02/go-3ds/secondscreen"
 	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/draw2d"
@@ -43,7 +43,7 @@ func main() {
 		return
 	}
 	defer screen.Close()
-	panel, err := bottom.New(bottom.Theme())
+	panel, err := secondscreen.New(secondscreen.Theme())
 	if err != nil {
 		println(err.Error())
 		return

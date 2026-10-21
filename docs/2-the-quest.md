@@ -300,12 +300,12 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 
 | Mission | Pieces | Time |
 |---|---|---|
-| A Go UI panel on the touch screen: the time of day | `bottom.New`, `Paint`, both screens in one frame | 10 min |
+| A Go UI panel on the touch screen: the time of day | `secondscreen.New`, `Paint`, both screens in one frame | 10 min |
 
 #### The idea
 
 The bottom screen is a **touch screen**, so it is the pointer: a finger or the stylus presses
-Go UI's buttons and drags its sliders exactly as a mouse would. `bottom` lays a Go UI interface out
+Go UI's buttons and drags its sliders exactly as a mouse would. `secondscreen` lays a Go UI interface out
 there in a theme made for fingers, in the sea's colours.
 
 Both screens are drawn in **one frame**: between `ctr.BeginFrame` and `ctr.EndFrame`, the island
@@ -324,7 +324,7 @@ import (
 	"math"
 
 	"github.com/akrck02/go-3ds/app"
-	"github.com/akrck02/go-3ds/bottom"
+	"github.com/akrck02/go-3ds/secondscreen"
 	"github.com/akrck02/go-renderer/camera"
 	"github.com/akrck02/go-renderer/ctr"
 	"github.com/akrck02/go-renderer/graphics"
@@ -347,7 +347,7 @@ func main() {
 		println(err.Error())
 		return
 	}
-	panel, err := bottom.New(bottom.Theme()) // go-ui on the bottom screen, in a theme for fingers
+	panel, err := secondscreen.New(secondscreen.Theme()) // go-ui on the bottom screen, in a theme for fingers
 	if err != nil {
 		println(err.Error())
 		return

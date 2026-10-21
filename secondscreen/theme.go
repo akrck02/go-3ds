@@ -1,4 +1,4 @@
-package bottom
+package secondscreen
 
 import (
 	"github.com/akrck02/go-renderer/draw2d"

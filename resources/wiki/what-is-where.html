@@ -14,8 +14,8 @@
 
 <tbody>
 <tr>
-<td><code>bottom</code></td>
-<td>A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer&rsquo;s <code>ctr.FlatRenderer</code> paints it, the touch screen is its pointer. <code>bottom.Theme</code> is Go UI&rsquo;s dark theme made for 320 × 240 pixels a finger touches, in the sea&rsquo;s colours.</td>
+<td><code>secondscreen</code></td>
+<td>A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer&rsquo;s <code>ctr.FlatRenderer</code> paints it, the touch screen is its pointer. <code>secondscreen.Theme</code> is Go UI&rsquo;s dark theme made for 320 × 240 pixels a finger touches, in the sea&rsquo;s colours.</td>
 </tr>
 
 <tr>
@@ -71,7 +71,7 @@ when the finger leaves the screen: a new light works the meshes&rsquo; colours o
 processor, which would make every step of a drag stutter.</p>
 
 <p>Both screens are drawn in one frame: the island with <code>ctr.SceneRenderer.PaintStereo</code>, the panel
-with <code>bottom.Interface.Paint</code>, between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>.</p>
+with <code>secondscreen.Interface.Paint</code>, between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>.</p>
 
 <p>A Go UI program with <code>window.Run</code> can also run on the console unchanged: Go UI&rsquo;s own window for
 the 3DS (its <code>feature/3ds</code> branch) puts the scene above and the interface below, and SELECT swaps

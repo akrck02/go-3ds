@@ -365,7 +365,7 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 <tbody>
 <tr>
 <td>A Go UI panel on the touch screen: the time of day</td>
-<td><code>bottom.New</code>, <code>Paint</code>, both screens in one frame</td>
+<td><code>secondscreen.New</code>, <code>Paint</code>, both screens in one frame</td>
 <td>10 min</td>
 </tr>
 </tbody>
@@ -374,7 +374,7 @@ Halve the speeds: `circleX * 0.9` and `circleY * 0.6`.
 <h4 id="the-idea-3">The idea</h4>
 
 <p>The bottom screen is a <strong>touch screen</strong>, so it is the pointer: a finger or the stylus presses
-Go UI&rsquo;s buttons and drags its sliders exactly as a mouse would. <code>bottom</code> lays a Go UI interface out
+Go UI&rsquo;s buttons and drags its sliders exactly as a mouse would. <code>secondscreen</code> lays a Go UI interface out
 there in a theme made for fingers, in the sea&rsquo;s colours.</p>
 
 <p>Both screens are drawn in <strong>one frame</strong>: between <code>ctr.BeginFrame</code> and <code>ctr.EndFrame</code>, the island
@@ -391,7 +391,7 @@ with <code>PaintStereo</code> (Draw would begin and end a frame of its own) and 
 	<span class="s">&#34;math&#34;</span>
 
 	<span class="s">&#34;github.com/akrck02/go-3ds/app&#34;</span>
-	<span class="s">&#34;github.com/akrck02/go-3ds/bottom&#34;</span>
+	<span class="s">&#34;github.com/akrck02/go-3ds/secondscreen&#34;</span>
 	<span class="s">&#34;github.com/akrck02/go-renderer/camera&#34;</span>
 	<span class="s">&#34;github.com/akrck02/go-renderer/ctr&#34;</span>
 	<span class="s">&#34;github.com/akrck02/go-renderer/graphics&#34;</span>
@@ -414,7 +414,7 @@ with <code>PaintStereo</code> (Draw would begin and end a frame of its own) and 
 		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
 		<span class="k">return</span>
 	<span class="p">}</span>
-	<span class="nx">panel</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">bottom</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="nx">bottom</span><span class="p">.</span><span class="nf">Theme</span><span class="p">())</span> <span class="c1">// go-ui on the bottom screen, in a theme for fingers</span>
+	<span class="nx">panel</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">secondscreen</span><span class="p">.</span><span class="nf">New</span><span class="p">(</span><span class="nx">secondscreen</span><span class="p">.</span><span class="nf">Theme</span><span class="p">())</span> <span class="c1">// go-ui on the bottom screen, in a theme for fingers</span>
 	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
 		<span class="nb">println</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nf">Error</span><span class="p">())</span>
 		<span class="k">return</span>

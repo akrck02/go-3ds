@@ -7,7 +7,8 @@
 Go programs on the **Nintendo 3DS**, as homebrew for the Homebrew Launcher. The drawing is
 [Go Renderer](https://github.com/akrck02/go-renderer)'s (`ctr`, through citro3d); this repository
 holds the rest of the platform: the program loop, a
-[Go UI](https://github.com/akrck02/go-ui) interface on the bottom screen, and an explorer of the
+[Go UI](https://github.com/akrck02/go-ui) interface on the second screen (`secondscreen`, the
+bottom one), and an explorer of the
 sample island.
 
 <p align="center">

@@ -8,7 +8,7 @@ import (
 	ui "github.com/akrck02/go-ui"
 )
 
-// build lays out the bottom screen: a heading with the frame rate, and three tabs.
+// build lays out the second screen (the bottom one): a heading with the frame rate, and three tabs.
 func (explorer *explorer) build(context *ui.Context) {
 	options := ui.PanelOptions{Dock: ui.DockLeft, Width: ui.Fixed(ctr.BottomWidth), Height: ui.Grow()}
 	context.PanelWith("Sample island", options, func() {

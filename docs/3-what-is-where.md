@@ -7,7 +7,7 @@ The packages of Go for 3DS, the explorer it comes with, what you need to build f
 
 | Piece | What it does |
 |---|---|
-| `bottom` | A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer's `ctr.FlatRenderer` paints it, the touch screen is its pointer. `bottom.Theme` is Go UI's dark theme made for 320 × 240 pixels a finger touches, in the sea's colours. |
+| `secondscreen` | A Go UI interface on the bottom screen: Go UI lays it out, Go Renderer's `ctr.FlatRenderer` paints it, the touch screen is its pointer. `secondscreen.Theme` is Go UI's dark theme made for 320 × 240 pixels a finger touches, in the sea's colours. |
 | `app` | The program loop: the New 3DS's fast clock, the controls into the input state every frame (Go Renderer's `ctr.Controls`: the cross as arrows, L and R as minus and plus, A Enter, B Escape and back, the touch screen as the pointer), START or the HOME menu to stop. Each frame also carries the buttons pressed, the New 3DS's C-stick and the gyroscope; `RunWithStart` is for programs that give START a use of their own. The loop yields once a frame, so goroutines such as Go Sound's get their turn. |
 | `network` | TCP connections over the console's socket service that never make a frame wait: reads return what has arrived, writes queue and `Flush` sends what the system takes. `DialSecure` talks TLS 1.2 through devkitPro's mbedtls, trusting Let's Encrypt's roots. |
 | `storage` | A program's small files on the SD card, under `sdmc:/3ds/<name>/`: saved whole or not at all, appended to, removed. |
@@ -32,7 +32,7 @@ when the finger leaves the screen: a new light works the meshes' colours out aga
 processor, which would make every step of a drag stutter.
 
 Both screens are drawn in one frame: the island with `ctr.SceneRenderer.PaintStereo`, the panel
-with `bottom.Interface.Paint`, between `ctr.BeginFrame` and `ctr.EndFrame`.
+with `secondscreen.Interface.Paint`, between `ctr.BeginFrame` and `ctr.EndFrame`.
 
 A Go UI program with `window.Run` can also run on the console unchanged: Go UI's own window for
 the 3DS (its `feature/3ds` branch) puts the scene above and the interface below, and SELECT swaps
